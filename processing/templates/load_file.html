@@ -1,0 +1,1325 @@
+{% extends 'base.html' %}
+
+{% block title %}Load File{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .filter-container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input {
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1a1a1a;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #1a1a1a;
+        }
+
+        .filter-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-clear {
+            background: #999;
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+        .btn-clear:hover {
+            background: #777;
+        }
+
+        .table-responsive {
+            margin-top: 30px;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-responsive th {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table-responsive td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .table-responsive tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .table-responsive tbody tr.hidden {
+            display: none;
+        }
+
+        .table-responsive th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table-responsive th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 50px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #selectAll {
+            cursor: pointer;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #666;
+            margin-top: 16px;
+        }
+
+        .selection-info {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+            color: #856404;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a1a1a;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h2 {
+                font-size: 22px;
+            }
+
+            .btn {
+                display: block;
+                width: 100%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        {% if table %}
+        <h2>Choose File from Database</h2>
+        
+        <div class="filter-container" role="search" aria-label="Filter files">
+            <div class="filter-title">Filter Files</div>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="filterFile">File Name</label>
+                    <input type="text" id="filterFile" placeholder="Search file name..." aria-label="Filter by file name">
+                </div>
+                <div class="filter-group">
+                    <label for="filterUploadTime">Upload Time</label>
+                    <input type="text" id="filterUploadTime" placeholder="Search upload time..." aria-label="Filter by upload time">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn-clear" id="clearFilters">Clear Filters</button>
+            </div>
+            <div class="results-count" id="resultsCount"></div>
+        </div>
+
+        <div class="alert" id="selectionAlert" role="alert">
+            Please select exactly one file to continue.
+        </div>
+
+        <div class="selection-info" id="selectionInfo">No file selected</div>
+
+        <form action="{% url 'show_table'%}" method="POST" id="modelsForm">
+            {% csrf_token %}
+            <div class="table-responsive">
+                {{ table|safe }}
+            </div>
+            <button type="submit" class="btn" id="submitBtn" style="margin-top: 20px;">Show Table</button>
+        </form>
+        {% else %}
+        <h2>No files found under this user</h2>
+        <a href="{% url 'file_upload'%}" class="btn btn-secondary">Upload New File</a>
+        <a href="{% url 'home'%}" class="btn btn-secondary">Home</a>
+
+        {% endif %}
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing your request...</div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        // Column indices for filtering
+        let columnIndices = {
+            file: -1,
+            uploadTime: -1
+        };
+
+        // Add checkboxes to the table and set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.table-responsive table');
+            if (table) {
+                // Find column indices by header names
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((header, index) => {
+                    const headerText = header.textContent.trim().toLowerCase();
+                    if (headerText.includes('file')) {
+                        columnIndices.file = index;
+                    } else if (headerText.includes('upload') && headerText.includes('time')) {
+                        columnIndices.uploadTime = index;
+                    }
+                });
+
+                // Add header checkbox
+                const thead = table.querySelector('thead tr');
+                if (thead) {
+                    const th = document.createElement('th');
+                    th.className = 'checkbox-cell';
+                    th.innerHTML = '<input type="checkbox" id="selectAll" aria-label="Select all visible files">';
+                    thead.insertBefore(th, thead.firstChild);
+                }
+
+                // Adjust column indices after adding checkbox column
+                Object.keys(columnIndices).forEach(key => {
+                    if (columnIndices[key] !== -1) {
+                        columnIndices[key]++;
+                    }
+                });
+
+                // Add row checkboxes
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'checkbox-cell';
+                        td.innerHTML = `<input type="checkbox" name="selected_file" value="${index}" aria-label="Select file ${index + 1}">`;
+                        row.insertBefore(td, row.firstChild);
+                    });
+                }
+
+                // Remove select all since we only allow one selection
+                const selectAll = document.getElementById('selectAll');
+                if (selectAll) {
+                    selectAll.style.display = 'none';
+                }
+
+                // Add event listeners to individual checkboxes
+                const checkboxes = document.querySelectorAll('input[name="selected_file"]');
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        enforceRadioBehavior(this);
+                        updateSelectionInfo();
+                    });
+                });
+
+                // Update results count
+                updateResultsCount();
+                updateSelectionInfo();
+
+                // Add filter event listeners
+                document.getElementById('filterFile').addEventListener('input', filterTable);
+                document.getElementById('filterUploadTime').addEventListener('input', filterTable);
+                document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
+                // Form validation
+                document.getElementById('modelsForm').addEventListener('submit', function(e) {
+                    const checked = document.querySelectorAll('input[name="selected_file"]:checked');
+                    const alert = document.getElementById('selectionAlert');
+                    
+                    if (checked.length !== 1) {
+                        e.preventDefault();
+                        if (checked.length === 0) {
+                            alert.textContent = 'Please select exactly one file to continue.';
+                        } else {
+                            alert.textContent = `Please select only one file. You have ${checked.length} files selected.`;
+                        }
+                        alert.classList.add('show');
+                        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        setTimeout(() => {
+                            alert.classList.remove('show');
+                        }, 3000);
+                        return false;
+                    }
+                    
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').classList.add('show');
+                    document.getElementById('submitBtn').disabled = true;
+                });
+            }
+        });
+
+        function enforceRadioBehavior(clickedCheckbox) {
+            if (clickedCheckbox.checked) {
+                const allCheckboxes = document.querySelectorAll('input[name="selected_file"]');
+                allCheckboxes.forEach(cb => {
+                    if (cb !== clickedCheckbox) {
+                        cb.checked = false;
+                    }
+                });
+            }
+        }
+
+        function filterTable() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const filterFile = document.getElementById('filterFile').value.toLowerCase();
+            const filterUploadTime = document.getElementById('filterUploadTime').value.toLowerCase();
+
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                
+                let showRow = true;
+
+                // Check file name
+                if (filterFile && columnIndices.file !== -1) {
+                    const cellText = cells[columnIndices.file]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterFile)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check upload time
+                if (filterUploadTime && columnIndices.uploadTime !== -1) {
+                    const cellText = cells[columnIndices.uploadTime]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterUploadTime)) {
+                        showRow = false;
+                    }
+                }
+
+                if (showRow) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                    // Uncheck hidden rows
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+
+            updateResultsCount();
+            updateSelectionInfo();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterFile').value = '';
+            document.getElementById('filterUploadTime').value = '';
+            filterTable();
+        }
+
+        function updateResultsCount() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const totalRows = table.querySelectorAll('tr').length;
+            const visibleRows = table.querySelectorAll('tr:not(.hidden)').length;
+
+            const resultsCount = document.getElementById('resultsCount');
+            if (visibleRows === totalRows) {
+                resultsCount.textContent = `Showing all ${totalRows} files`;
+            } else {
+                resultsCount.textContent = `Showing ${visibleRows} of ${totalRows} files`;
+            }
+        }
+
+        function updateSelectionInfo() {
+            const checked = document.querySelectorAll('input[name="selected_file"]:checked');
+            const selectionInfo = document.getElementById('selectionInfo');
+            const count = checked.length;
+            
+            if (count === 0) {
+                selectionInfo.textContent = 'No file selected';
+                selectionInfo.style.background = '#e3f2fd';
+                selectionInfo.style.color = '#1565c0';
+            } else if (count === 1) {
+                selectionInfo.textContent = '1 file selected ✓';
+                selectionInfo.style.background = '#e8f5e9';
+                selectionInfo.style.color = '#2e7d32';
+            }
+        }
+    </script>
+</body>
+</html>
+{% endblock content %}
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .filter-container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input {
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1a1a1a;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #1a1a1a;
+        }
+
+        .filter-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-clear {
+            background: #999;
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+        .btn-clear:hover {
+            background: #777;
+        }
+
+        .table-responsive {
+            margin-top: 30px;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-responsive th {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table-responsive td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .table-responsive tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .table-responsive tbody tr.hidden {
+            display: none;
+        }
+
+        .table-responsive th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table-responsive th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 50px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #selectAll {
+            cursor: pointer;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #666;
+            margin-top: 16px;
+        }
+
+        .selection-info {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+            color: #856404;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a1a1a;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h2 {
+                font-size: 22px;
+            }
+
+            .btn {
+                display: block;
+                width: 100%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Choose File from Database</h2>
+        
+        <div class="filter-container" role="search" aria-label="Filter files">
+            <div class="filter-title">Filter Files</div>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="filterFile">File Name</label>
+                    <input type="text" id="filterFile" placeholder="Search file name..." aria-label="Filter by file name">
+                </div>
+                <div class="filter-group">
+                    <label for="filterUploadTime">Upload Time</label>
+                    <input type="text" id="filterUploadTime" placeholder="Search upload time..." aria-label="Filter by upload time">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn-clear" id="clearFilters">Clear Filters</button>
+            </div>
+            <div class="results-count" id="resultsCount"></div>
+        </div>
+
+        <div class="alert" id="selectionAlert" role="alert">
+            Please select at least one file to continue.
+        </div>
+
+        <div class="selection-info" id="selectionInfo">0 files selected</div>
+
+        <form action="{% url 'show_table'%}" method="POST" id="modelsForm">
+            {% csrf_token %}
+            <div class="table-responsive">
+                {{ table|safe }}
+            </div>
+            <button type="submit" class="btn" id="submitBtn" style="margin-top: 20px;">Show Table</button>
+        </form>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing your request...</div>
+        </div>
+    </div>
+
+    <script>
+        // Column indices for filtering
+        let columnIndices = {
+            file: -1,
+            uploadTime: -1
+        };
+
+        // Add checkboxes to the table and set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.table-responsive table');
+            if (table) {
+                // Find column indices by header names
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((header, index) => {
+                    const headerText = header.textContent.trim().toLowerCase();
+                    if (headerText.includes('file')) {
+                        columnIndices.file = index;
+                    } else if (headerText.includes('upload') && headerText.includes('time')) {
+                        columnIndices.uploadTime = index;
+                    }
+                });
+
+                // Add header checkbox
+                const thead = table.querySelector('thead tr');
+                if (thead) {
+                    const th = document.createElement('th');
+                    th.className = 'checkbox-cell';
+                    th.innerHTML = '<input type="checkbox" id="selectAll" aria-label="Select all visible files">';
+                    thead.insertBefore(th, thead.firstChild);
+                }
+
+                // Adjust column indices after adding checkbox column
+                Object.keys(columnIndices).forEach(key => {
+                    if (columnIndices[key] !== -1) {
+                        columnIndices[key]++;
+                    }
+                });
+
+                // Add row checkboxes
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'checkbox-cell';
+                        td.innerHTML = `<input type="checkbox" name="selected_file" value="${index}" aria-label="Select file ${index + 1}">`;
+                        row.insertBefore(td, row.firstChild);
+                    });
+                }
+
+                // Select all functionality
+                const selectAll = document.getElementById('selectAll');
+                if (selectAll) {
+                    selectAll.addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('tbody tr:not(.hidden) input[name="selected_file"]');
+                        checkboxes.forEach(cb => cb.checked = this.checked);
+                        updateSelectionInfo();
+                    });
+                }
+
+                // Add event listeners to individual checkboxes
+                const checkboxes = document.querySelectorAll('input[name="selected_file"]');
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', updateSelectionInfo);
+                });
+
+                // Update results count
+                updateResultsCount();
+                updateSelectionInfo();
+
+                // Add filter event listeners
+                document.getElementById('filterFile').addEventListener('input', filterTable);
+                document.getElementById('filterUploadTime').addEventListener('input', filterTable);
+                document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
+                // Form validation
+                document.getElementById('modelsForm').addEventListener('submit', function(e) {
+                    const checked = document.querySelectorAll('input[name="selected_file"]:checked');
+                    const alert = document.getElementById('selectionAlert');
+                    
+                    if (checked.length === 0) {
+                        e.preventDefault();
+                        alert.classList.add('show');
+                        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        setTimeout(() => {
+                            alert.classList.remove('show');
+                        }, 3000);
+                        return false;
+                    }
+                    
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').classList.add('show');
+                    document.getElementById('submitBtn').disabled = true;
+                });
+            }
+        });
+
+        function filterTable() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const filterFile = document.getElementById('filterFile').value.toLowerCase();
+            const filterUploadTime = document.getElementById('filterUploadTime').value.toLowerCase();
+
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                
+                let showRow = true;
+
+                // Check file name
+                if (filterFile && columnIndices.file !== -1) {
+                    const cellText = cells[columnIndices.file]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterFile)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check upload time
+                if (filterUploadTime && columnIndices.uploadTime !== -1) {
+                    const cellText = cells[columnIndices.uploadTime]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterUploadTime)) {
+                        showRow = false;
+                    }
+                }
+
+                if (showRow) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                    // Uncheck hidden rows
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+
+            // Uncheck "Select All" since hidden rows are unchecked
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) selectAll.checked = false;
+
+            updateResultsCount();
+            updateSelectionInfo();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterFile').value = '';
+            document.getElementById('filterUploadTime').value = '';
+            filterTable();
+        }
+
+        function updateResultsCount() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const totalRows = table.querySelectorAll('tr').length;
+            const visibleRows = table.querySelectorAll('tr:not(.hidden)').length;
+
+            const resultsCount = document.getElementById('resultsCount');
+            if (visibleRows === totalRows) {
+                resultsCount.textContent = `Showing all ${totalRows} files`;
+            } else {
+                resultsCount.textContent = `Showing ${visibleRows} of ${totalRows} files`;
+            }
+        }
+
+        function updateSelectionInfo() {
+            const checked = document.querySelectorAll('input[name="selected_file"]:checked');
+            const selectionInfo = document.getElementById('selectionInfo');
+            const count = checked.length;
+            
+            if (count === 0) {
+                selectionInfo.textContent = '0 files selected';
+                selectionInfo.style.background = '#e3f2fd';
+                selectionInfo.style.color = '#1565c0';
+            } else if (count === 1) {
+                selectionInfo.textContent = '1 file selected';
+                selectionInfo.style.background = '#e8f5e9';
+                selectionInfo.style.color = '#2e7d32';
+            } else {
+                selectionInfo.textContent = `${count} files selected`;
+                selectionInfo.style.background = '#e8f5e9';
+                selectionInfo.style.color = '#2e7d32';
+            }
+        }
+    </script>
+</body>
+</html>
+ -->
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h2 {
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+        .upload-area {
+            border: 2px dashed #d0d0d0;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: #fafafa;
+            margin-bottom: 16px;
+        }
+
+        .upload-area:hover {
+            border-color: #4a4a4a;
+            background: #f5f5f5;
+        }
+
+        .upload-area.dragover {
+            border-color: #4a4a4a;
+            background: #f0f0f0;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            color: #666;
+        }
+
+        .upload-text {
+            color: #1a1a1a;
+            font-size: 15px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 13px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-info.show {
+            display: flex;
+        }
+
+        .file-icon {
+            width: 28px;
+            height: 28px;
+            color: #666;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            color: #1a1a1a;
+            font-weight: 500;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .file-size {
+            color: #999;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .remove-file {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 24px;
+            padding: 4px 8px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .remove-file:hover {
+            color: #666;
+        }
+
+        .upload-button {
+            width: 100%;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .upload-button:hover {
+            background: #333;
+        }
+
+        .upload-button:active {
+            background: #000;
+        }
+
+        .upload-button:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Choose File from Database</h2>
+        <form action="{% url 'show_graph'%}" method="POST" id="modelsForm">
+            {% csrf_token %}
+            <div class="table-responsive">
+                {{ table|safe }}
+            </div>
+            <div style="margin-top: 20px;">
+                <input type="text" name="title" id="inputField" placeholder="Enter Graph Title..." style="padding: 10px 12px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; width: 100%; max-width: 400px; margin-bottom: 16px;">
+            </div>
+            <button type="submit" class="btn" style="margin-top: 20px;">Submit Selected Models</button>
+
+        </form>
+    </div>
+</body>
+
+-->

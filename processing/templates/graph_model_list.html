@@ -1,0 +1,2166 @@
+{% extends 'base.html' %}
+
+{% block title %}Graph Model List{% endblock %}
+
+{% block content %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DataFrame Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        form button {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        form button:hover {
+            background: #333;
+        }
+
+        form button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .filter-container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input {
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1a1a1a;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #1a1a1a;
+        }
+
+        .filter-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-clear {
+            background: #999;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .btn-clear:hover {
+            background: #777;
+        }
+
+        .table-responsive {
+            margin-top: 30px;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-responsive th {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table-responsive td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .table-responsive tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .table-responsive tbody tr.hidden {
+            display: none;
+        }
+
+        .table-responsive th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table-responsive th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            border-left: 4px solid #d32f2f;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #c62828;
+        }
+
+        .error-message h1 {
+            color: #c62828;
+            font-size: 20px;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 50px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #selectAll {
+            cursor: pointer;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #666;
+            margin-top: 16px;
+        }
+
+        .selection-info {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+            color: #856404;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a1a1a;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .btn, form button {
+                display: block;
+                width: 100%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            form {
+                display: block;
+                width: 100%;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if table %}
+        {% if exception %}
+        <div class="error-message">
+            <h1>{{ exception }}</h1>
+        </div>
+        <a href="{% url 'file_upload'%}" class="btn btn-secondary">Upload another model</a>
+        {% else %}
+        <h1>List of Models</h1>
+        
+        <div class="filter-container" role="search" aria-label="Filter models">
+            <div class="filter-title">Filter Models</div>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="filterModelName">Model Name</label>
+                    <input type="text" id="filterModelName" placeholder="Search model name..." aria-label="Filter by model name">
+                </div>
+                <div class="filter-group">
+                    <label for="filterYVariable">Y Variable</label>
+                    <input type="text" id="filterYVariable" placeholder="Search y variable..." aria-label="Filter by y variable">
+                </div>
+                <div class="filter-group">
+                    <label for="filterFileTrained">File Trained On</label>
+                    <input type="text" id="filterFileTrained" placeholder="Search file name..." aria-label="Filter by file trained on">
+                </div>
+                <div class="filter-group">
+                    <label for="filterUploadTime">Upload Time</label>
+                    <input type="text" id="filterUploadTime" placeholder="Search upload time..." aria-label="Filter by upload time">
+                </div>
+                <div class="filter-group">
+                    <label for="filterModelClass">Model Class</label>
+                    <input type="text" id="filterModelClass" placeholder="Search model class..." aria-label="Filter by model class">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-clear" id="clearFilters">Clear Filters</button>
+            </div>
+            <div class="results-count" id="resultsCount"></div>
+        </div>
+
+        <div class="alert" id="selectionAlert" role="alert">
+            Please select at least one model to continue.
+        </div>
+
+        <div class="selection-info" id="selectionInfo">0 models selected</div>
+
+        <form action="{% url 'show_graph'%}" method="POST" id="modelsForm">
+            {% csrf_token %}
+            <div class="table-responsive">
+                {{ table|safe }}
+            </div>
+            <div style="margin-top: 20px;">
+                <input type="text" name="title" id="inputField" placeholder="Enter Graph Title..." style="padding: 10px 12px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; width: 100%; max-width: 400px; margin-bottom: 16px;" aria-label="Graph title">
+            </div>
+            <button type="submit" class="btn" id="submitBtn" style="margin-top: 20px;">Submit Selected Models</button>
+        </form>
+        {% endif %}
+        {% else %}
+        <h2>No models found under this user</h2>
+        <a href="{% url 'file_upload'%}" class="btn btn-secondary">Upload New File</a>
+        <a href="{% url 'load_file'%}" class="btn btn-secondary">Load File</a>
+        <a href="{% url 'home'%}" class="btn btn-secondary">Home</a>
+
+        {% endif %}
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing your request...</div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        // Column indices for filtering
+        let columnIndices = {
+            modelName: -1,
+            yVariable: -1,
+            fileTrained: -1,
+            uploadTime: -1,
+            modelClass: -1
+        };
+
+        // Add checkboxes to the table and set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.table-responsive table');
+            if (table) {
+                // Find column indices by header names
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((header, index) => {
+                    const headerText = header.textContent.trim().toLowerCase();
+                    if (headerText.includes('model') && headerText.includes('name')) {
+                        columnIndices.modelName = index;
+                    } else if (headerText.includes('y') && headerText.includes('variable')) {
+                        columnIndices.yVariable = index;
+                    } else if (headerText.includes('file') && headerText.includes('trained')) {
+                        columnIndices.fileTrained = index;
+                    } else if (headerText.includes('upload') && headerText.includes('time')) {
+                        columnIndices.uploadTime = index;
+                    } else if (headerText.includes('model') && headerText.includes('class')) {
+                        columnIndices.modelClass = index;
+                    }
+                });
+
+                // Add header checkbox
+                const thead = table.querySelector('thead tr');
+                if (thead) {
+                    const th = document.createElement('th');
+                    th.className = 'checkbox-cell';
+                    th.innerHTML = '<input type="checkbox" id="selectAll" aria-label="Select all visible models">';
+                    thead.insertBefore(th, thead.firstChild);
+                }
+
+                // Adjust column indices after adding checkbox column
+                Object.keys(columnIndices).forEach(key => {
+                    if (columnIndices[key] !== -1) {
+                        columnIndices[key]++;
+                    }
+                });
+
+                // Add row checkboxes
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'checkbox-cell';
+                        td.innerHTML = `<input type="checkbox" name="selected_models" value="${index}" aria-label="Select model ${index + 1}">`;
+                        row.insertBefore(td, row.firstChild);
+                    });
+                }
+
+                // Select all functionality
+                const selectAll = document.getElementById('selectAll');
+                if (selectAll) {
+                    selectAll.addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('tbody tr:not(.hidden) input[name="selected_models"]');
+                        checkboxes.forEach(cb => cb.checked = this.checked);
+                        updateSelectionInfo();
+                    });
+                }
+
+                // Add event listeners to individual checkboxes
+                const checkboxes = document.querySelectorAll('input[name="selected_models"]');
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', updateSelectionInfo);
+                });
+
+                // Update results count
+                updateResultsCount();
+                updateSelectionInfo();
+
+                // Add filter event listeners
+                document.getElementById('filterModelName').addEventListener('input', filterTable);
+                document.getElementById('filterYVariable').addEventListener('input', filterTable);
+                document.getElementById('filterFileTrained').addEventListener('input', filterTable);
+                document.getElementById('filterUploadTime').addEventListener('input', filterTable);
+                document.getElementById('filterModelClass').addEventListener('input', filterTable);
+                document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
+                // Form validation
+                document.getElementById('modelsForm').addEventListener('submit', function(e) {
+                    const checked = document.querySelectorAll('input[name="selected_models"]:checked');
+                    const alert = document.getElementById('selectionAlert');
+                    
+                    if (checked.length === 0) {
+                        e.preventDefault();
+                        alert.classList.add('show');
+                        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        setTimeout(() => {
+                            alert.classList.remove('show');
+                        }, 3000);
+                        return false;
+                    }
+                    
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').classList.add('show');
+                    document.getElementById('submitBtn').disabled = true;
+                });
+            }
+        });
+
+        function filterTable() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const filterModelName = document.getElementById('filterModelName').value.toLowerCase();
+            const filterYVariable = document.getElementById('filterYVariable').value.toLowerCase();
+            const filterFileTrained = document.getElementById('filterFileTrained').value.toLowerCase();
+            const filterUploadTime = document.getElementById('filterUploadTime').value.toLowerCase();
+            const filterModelClass = document.getElementById('filterModelClass').value.toLowerCase();
+
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                
+                let showRow = true;
+
+                // Check model name
+                if (filterModelName && columnIndices.modelName !== -1) {
+                    const cellText = cells[columnIndices.modelName]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterModelName)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check y variable
+                if (filterYVariable && columnIndices.yVariable !== -1) {
+                    const cellText = cells[columnIndices.yVariable]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterYVariable)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check file trained on
+                if (filterFileTrained && columnIndices.fileTrained !== -1) {
+                    const cellText = cells[columnIndices.fileTrained]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterFileTrained)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check upload time
+                if (filterUploadTime && columnIndices.uploadTime !== -1) {
+                    const cellText = cells[columnIndices.uploadTime]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterUploadTime)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check model class
+                if (filterModelClass && columnIndices.modelClass !== -1) {
+                    const cellText = cells[columnIndices.modelClass]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterModelClass)) {
+                        showRow = false;
+                    }
+                }
+
+                if (showRow) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                    // Uncheck hidden rows
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+
+            // Uncheck "Select All" since hidden rows are unchecked
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) selectAll.checked = false;
+
+            updateResultsCount();
+            updateSelectionInfo();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterModelName').value = '';
+            document.getElementById('filterYVariable').value = '';
+            document.getElementById('filterFileTrained').value = '';
+            document.getElementById('filterUploadTime').value = '';
+            document.getElementById('filterModelClass').value = '';
+            filterTable();
+        }
+
+        function updateResultsCount() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const totalRows = table.querySelectorAll('tr').length;
+            const visibleRows = table.querySelectorAll('tr:not(.hidden)').length;
+
+            const resultsCount = document.getElementById('resultsCount');
+            if (visibleRows === totalRows) {
+                resultsCount.textContent = `Showing all ${totalRows} models`;
+            } else {
+                resultsCount.textContent = `Showing ${visibleRows} of ${totalRows} models`;
+            }
+        }
+
+        function updateSelectionInfo() {
+            const checked = document.querySelectorAll('input[name="selected_models"]:checked');
+            const selectionInfo = document.getElementById('selectionInfo');
+            const count = checked.length;
+            
+            if (count === 0) {
+                selectionInfo.textContent = '0 models selected';
+                selectionInfo.style.background = '#e3f2fd';
+                selectionInfo.style.color = '#1565c0';
+            } else if (count === 1) {
+                selectionInfo.textContent = '1 model selected';
+                selectionInfo.style.background = '#e8f5e9';
+                selectionInfo.style.color = '#2e7d32';
+            } else {
+                selectionInfo.textContent = `${count} models selected`;
+                selectionInfo.style.background = '#e8f5e9';
+                selectionInfo.style.color = '#2e7d32';
+            }
+        }
+    </script>
+</body>
+</html>
+{% endblock content %}
+
+
+<!-- <!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DataFrame Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        form button {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        form button:hover {
+            background: #333;
+        }
+
+        .filter-container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input {
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1a1a1a;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #1a1a1a;
+        }
+
+        .filter-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-clear {
+            background: #999;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .btn-clear:hover {
+            background: #777;
+        }
+
+        .table-responsive {
+            margin-top: 30px;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-responsive th {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table-responsive td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .table-responsive tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .table-responsive tbody tr.hidden {
+            display: none;
+        }
+
+        .table-responsive th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table-responsive th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            border-left: 4px solid #d32f2f;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #c62828;
+        }
+
+        .error-message h1 {
+            color: #c62828;
+            font-size: 20px;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 50px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #selectAll {
+            cursor: pointer;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #666;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .btn, form button {
+                display: block;
+                width: 100%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            form {
+                display: block;
+                width: 100%;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if exception %}
+        <div class="error-message">
+            <h1>{{ exception }}</h1>
+        </div>
+        <a href="{% url 'file_upload'%}" class="btn btn-secondary">Upload another model</a>
+        {% else %}
+        <span class="success-badge">✓ Success</span> -->
+        <h1>List of Models</h1>
+        
+        <!-- <div>
+            <a href="/upload/" class="btn btn-secondary">Upload another model</a>
+            <form action="/cleaning/columns/" method="GET">
+                <button type="submit" class="btn">Variable Selection</button>
+            </form>
+        </div> 
+
+        <div class="filter-container">
+            <div class="filter-title">Filter Models</div>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="filterModelName">Model Name</label>
+                    <input type="text" id="filterModelName" placeholder="Search model name...">
+                </div>
+                <div class="filter-group">
+                    <label for="filterYVariable">Y Variable</label>
+                    <input type="text" id="filterYVariable" placeholder="Search y variable...">
+                </div>
+                <div class="filter-group">
+                    <label for="filterFileTrained">File Trained On</label>
+                    <input type="text" id="filterFileTrained" placeholder="Search file name...">
+                </div>
+                <div class="filter-group">
+                    <label for="filterUploadTime">Upload Time</label>
+                    <input type="text" id="filterUploadTime" placeholder="Search upload time...">
+                </div>
+                <div class="filter-group">
+                    <label for="filterModelClass">Model Class</label>
+                    <input type="text" id="filterModelClass" placeholder="Search model class...">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-clear" id="clearFilters">Clear Filters</button>
+            </div>
+            <div class="results-count" id="resultsCount"></div>
+        </div>
+
+        <form action="{% url 'show_graph'%}" method="POST" id="modelsForm">
+            {% csrf_token %}
+            <div class="table-responsive">
+                {{ table|safe }}
+            </div>
+            <div style="margin-top: 20px;">
+                <input type="text" name="title" id="inputField" placeholder="Enter Graph Title..." style="padding: 10px 12px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; width: 100%; max-width: 400px; margin-bottom: 16px;">
+            </div>
+            <button type="submit" class="btn" style="margin-top: 20px;">Submit Selected Models</button>
+
+        </form>
+        {% endif %}
+    </div>
+
+    <script>
+        // Column indices for filtering (adjust these based on your actual table structure)
+        let columnIndices = {
+            modelName: -1,
+            yVariable: -1,
+            fileTrained: -1,
+            uploadTime: -1,
+            modelClass: -1
+        };
+
+        // Add checkboxes to the table
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.table-responsive table');
+            if (table) {
+                // Find column indices by header names
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((header, index) => {
+                    const headerText = header.textContent.trim().toLowerCase();
+                    if (headerText.includes('model') && headerText.includes('name')) {
+                        columnIndices.modelName = index;
+                    } else if (headerText.includes('y') && headerText.includes('variable')) {
+                        columnIndices.yVariable = index;
+                    } else if (headerText.includes('file') && headerText.includes('trained')) {
+                        columnIndices.fileTrained = index;
+                    } else if (headerText.includes('upload') && headerText.includes('time')) {
+                        columnIndices.uploadTime = index;
+                    } else if (headerText.includes('model') && headerText.includes('class')) {
+                        columnIndices.modelClass = index;
+                    }
+                });
+
+                // Add header checkbox
+                const thead = table.querySelector('thead tr');
+                if (thead) {
+                    const th = document.createElement('th');
+                    th.className = 'checkbox-cell';
+                    th.innerHTML = '<input type="checkbox" id="selectAll">';
+                    thead.insertBefore(th, thead.firstChild);
+                }
+
+                // Adjust column indices after adding checkbox column
+                Object.keys(columnIndices).forEach(key => {
+                    if (columnIndices[key] !== -1) {
+                        columnIndices[key]++;
+                    }
+                });
+
+                // Add row checkboxes
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'checkbox-cell';
+                        td.innerHTML = `<input type="checkbox" name="selected_models" value="${index}">`;
+                        row.insertBefore(td, row.firstChild);
+                    });
+                }
+
+                // Select all functionality
+                const selectAll = document.getElementById('selectAll');
+                if (selectAll) {
+                    selectAll.addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('tbody tr:not(.hidden) input[name="selected_models"]');
+                        checkboxes.forEach(cb => cb.checked = this.checked);
+                    });
+                }
+
+                // Update results count
+                updateResultsCount();
+
+                // Add filter event listeners
+                document.getElementById('filterModelName').addEventListener('input', filterTable);
+                document.getElementById('filterYVariable').addEventListener('input', filterTable);
+                document.getElementById('filterFileTrained').addEventListener('input', filterTable);
+                document.getElementById('filterUploadTime').addEventListener('input', filterTable);
+                document.getElementById('filterModelClass').addEventListener('input', filterTable);
+                document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            }
+        });
+
+        function filterTable() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const filterModelName = document.getElementById('filterModelName').value.toLowerCase();
+            const filterYVariable = document.getElementById('filterYVariable').value.toLowerCase();
+            const filterFileTrained = document.getElementById('filterFileTrained').value.toLowerCase();
+            const filterUploadTime = document.getElementById('filterUploadTime').value.toLowerCase();
+            const filterModelClass = document.getElementById('filterModelClass').value.toLowerCase();
+
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                
+                let showRow = true;
+
+                // Check model name
+                if (filterModelName && columnIndices.modelName !== -1) {
+                    const cellText = cells[columnIndices.modelName]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterModelName)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check y variable
+                if (filterYVariable && columnIndices.yVariable !== -1) {
+                    const cellText = cells[columnIndices.yVariable]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterYVariable)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check file trained on
+                if (filterFileTrained && columnIndices.fileTrained !== -1) {
+                    const cellText = cells[columnIndices.fileTrained]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterFileTrained)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check upload time
+                if (filterUploadTime && columnIndices.uploadTime !== -1) {
+                    const cellText = cells[columnIndices.uploadTime]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterUploadTime)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check model class
+                if (filterModelClass && columnIndices.modelClass !== -1) {
+                    const cellText = cells[columnIndices.modelClass]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterModelClass)) {
+                        showRow = false;
+                    }
+                }
+
+                if (showRow) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                    // Uncheck hidden rows
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+
+            updateResultsCount();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterModelName').value = '';
+            document.getElementById('filterYVariable').value = '';
+            document.getElementById('filterFileTrained').value = '';
+            document.getElementById('filterUploadTime').value = '';
+            document.getElementById('filterModelClass').value = '';
+            filterTable();
+        }
+
+        function updateResultsCount() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const totalRows = table.querySelectorAll('tr').length;
+            const visibleRows = table.querySelectorAll('tr:not(.hidden)').length;
+
+            const resultsCount = document.getElementById('resultsCount');
+            if (visibleRows === totalRows) {
+                resultsCount.textContent = `Showing all ${totalRows} models`;
+            } else {
+                resultsCount.textContent = `Showing ${visibleRows} of ${totalRows} models`;
+            }
+        }
+    </script>
+</body>
+</html> -->
+
+<!-- <!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DataFrame Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        form button {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        form button:hover {
+            background: #333;
+        }
+
+        .filter-container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input {
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1a1a1a;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #1a1a1a;
+        }
+
+        .filter-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-clear {
+            background: #999;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .btn-clear:hover {
+            background: #777;
+        }
+
+        .table-responsive {
+            margin-top: 30px;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-responsive th {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table-responsive td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .table-responsive tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .table-responsive tbody tr.hidden {
+            display: none;
+        }
+
+        .table-responsive th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table-responsive th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            border-left: 4px solid #d32f2f;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #c62828;
+        }
+
+        .error-message h1 {
+            color: #c62828;
+            font-size: 20px;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 50px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #selectAll {
+            cursor: pointer;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #666;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .btn, form button {
+                display: block;
+                width: 100%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            form {
+                display: block;
+                width: 100%;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if exception %}
+        <div class="error-message">
+            <h1>{{ exception }}</h1>
+        </div>
+        <a href="/upload/" class="btn btn-secondary">Upload another model</a>
+        {% else %}
+        <span class="success-badge">✓ Success</span>
+        <h1>List of Models</h1>
+        
+        <div>
+            <a href="/upload/" class="btn btn-secondary">Upload another model</a>
+            <form action="/cleaning/columns/" method="GET">
+                <button type="submit" class="btn">Variable Selection</button>
+            </form>
+        </div>
+
+        <div class="filter-container">
+            <div class="filter-title">Filter Models</div>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="filterModelName">Model Name</label>
+                    <input type="text" id="filterModelName" placeholder="Search model name...">
+                </div>
+                <div class="filter-group">
+                    <label for="filterYVariable">Y Variable</label>
+                    <input type="text" id="filterYVariable" placeholder="Search y variable...">
+                </div>
+                <div class="filter-group">
+                    <label for="filterFileTrained">File Trained On</label>
+                    <input type="text" id="filterFileTrained" placeholder="Search file name...">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-clear" id="clearFilters">Clear Filters</button>
+            </div>
+            <div class="results-count" id="resultsCount"></div>
+        </div>
+
+        <form action="/models/submit/" method="POST" id="modelsForm">
+            <div class="table-responsive">
+                {{ table|safe }}
+            </div>
+            <button type="submit" class="btn" style="margin-top: 20px;">Submit Selected Models</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <script>
+        // Column indices for filtering (adjust these based on your actual table structure)
+        let columnIndices = {
+            modelName: 3,
+            yVariable: 6,
+            fileTrained: 10
+        };
+
+        // Add checkboxes to the table
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.table-responsive table');
+            if (table) {
+                // Find column indices by header names
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((header, index) => {
+                    const headerText = header.textContent.trim().toLowerCase();
+                    if (headerText.includes('model') && headerText.includes('name')) {
+                        columnIndices.modelName = index;
+                    } else if (headerText.includes('y') && headerText.includes('variable')) {
+                        columnIndices.yVariable = index;
+                    } else if (headerText.includes('file') && headerText.includes('trained')) {
+                        columnIndices.fileTrained = index;
+                    }
+                });
+
+                // Add header checkbox
+                const thead = table.querySelector('thead tr');
+                if (thead) {
+                    const th = document.createElement('th');
+                    th.className = 'checkbox-cell';
+                    th.innerHTML = '<input type="checkbox" id="selectAll">';
+                    thead.insertBefore(th, thead.firstChild);
+                }
+
+                // Adjust column indices after adding checkbox column
+                Object.keys(columnIndices).forEach(key => {
+                    if (columnIndices[key] !== -1) {
+                        columnIndices[key]++;
+                    }
+                });
+
+                // Add row checkboxes
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'checkbox-cell';
+                        td.innerHTML = `<input type="checkbox" name="selected_models" value="${index}">`;
+                        row.insertBefore(td, row.firstChild);
+                    });
+                }
+
+                // Select all functionality
+                const selectAll = document.getElementById('selectAll');
+                if (selectAll) {
+                    selectAll.addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('tbody tr:not(.hidden) input[name="selected_models"]');
+                        checkboxes.forEach(cb => cb.checked = this.checked);
+                    });
+                }
+
+                // Update results count
+                updateResultsCount();
+
+                // Add filter event listeners
+                document.getElementById('filterModelName').addEventListener('input', filterTable);
+                document.getElementById('filterYVariable').addEventListener('input', filterTable);
+                document.getElementById('filterFileTrained').addEventListener('input', filterTable);
+                document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            }
+        });
+
+        function filterTable() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const filterModelName = document.getElementById('filterModelName').value.toLowerCase();
+            const filterYVariable = document.getElementById('filterYVariable').value.toLowerCase();
+            const filterFileTrained = document.getElementById('filterFileTrained').value.toLowerCase();
+
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                
+                let showRow = true;
+
+                // Check model name
+                if (filterModelName && columnIndices.modelName !== -1) {
+                    const cellText = cells[columnIndices.modelName]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterModelName)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check y variable
+                if (filterYVariable && columnIndices.yVariable !== -1) {
+                    const cellText = cells[columnIndices.yVariable]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterYVariable)) {
+                        showRow = false;
+                    }
+                }
+
+                // Check file trained on
+                if (filterFileTrained && columnIndices.fileTrained !== -1) {
+                    const cellText = cells[columnIndices.fileTrained]?.textContent.toLowerCase() || '';
+                    if (!cellText.includes(filterFileTrained)) {
+                        showRow = false;
+                    }
+                }
+
+                if (showRow) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                    // Uncheck hidden rows
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+
+            updateResultsCount();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterModelName').value = '';
+            document.getElementById('filterYVariable').value = '';
+            document.getElementById('filterFileTrained').value = '';
+            filterTable();
+        }
+
+        function updateResultsCount() {
+            const table = document.querySelector('.table-responsive table tbody');
+            if (!table) return;
+
+            const totalRows = table.querySelectorAll('tr').length;
+            const visibleRows = table.querySelectorAll('tr:not(.hidden)').length;
+
+            const resultsCount = document.getElementById('resultsCount');
+            if (visibleRows === totalRows) {
+                resultsCount.textContent = `Showing all ${totalRows} models`;
+            } else {
+                resultsCount.textContent = `Showing ${visibleRows} of ${totalRows} models`;
+            }
+        }
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DataFrame Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        form button {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        form button:hover {
+            background: #333;
+        }
+
+        .table-responsive {
+            margin-top: 30px;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-responsive th {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table-responsive td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .table-responsive tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .table-responsive th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table-responsive th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            border-left: 4px solid #d32f2f;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #c62828;
+        }
+
+        .error-message h1 {
+            color: #c62828;
+            font-size: 20px;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 50px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #selectAll {
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .btn, form button {
+                display: block;
+                width: 100%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            form {
+                display: block;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if exception %}
+        <div class="error-message">
+            <h1>{{ exception }}</h1>
+        </div>
+        <a href="/upload/" class="btn btn-secondary">Upload another model</a>
+        {% else %}
+        <span class="success-badge">✓ Success</span>
+        <h1>List of Models</h1>
+        
+        <div>
+            <a href="/upload/" class="btn btn-secondary">Upload another model</a>
+            <form action="/cleaning/columns/" method="GET">
+                <button type="submit" class="btn">Variable Selection</button>
+            </form>
+        </div>
+
+        <form action="/models/submit/" method="POST" id="modelsForm">
+            <div class="table-responsive">
+                {{ table|safe }}
+            </div>
+            <button type="submit" class="btn" style="margin-top: 20px;">Submit Selected Models</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <script>
+        // Add checkboxes to the table
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.querySelector('.table-responsive table');
+            if (table) {
+                // Add header checkbox
+                const thead = table.querySelector('thead tr');
+                if (thead) {
+                    const th = document.createElement('th');
+                    th.className = 'checkbox-cell';
+                    th.innerHTML = '<input type="checkbox" id="selectAll">';
+                    thead.insertBefore(th, thead.firstChild);
+                }
+
+                // Add row checkboxes
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'checkbox-cell';
+                        td.innerHTML = `<input type="checkbox" name="selected_models" value="${index}">`;
+                        row.insertBefore(td, row.firstChild);
+                    });
+                }
+
+                // Select all functionality
+                const selectAll = document.getElementById('selectAll');
+                if (selectAll) {
+                    selectAll.addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('input[name="selected_models"]');
+                        checkboxes.forEach(cb => cb.checked = this.checked);
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!-- <!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DataFrame Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        form button {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        form button:hover {
+            background: #333;
+        }
+
+        .table-responsive {
+            margin-top: 30px;
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-responsive table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-responsive th {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table-responsive td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .table-responsive tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .table-responsive th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table-responsive th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            border-left: 4px solid #d32f2f;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #c62828;
+        }
+
+        .error-message h1 {
+            color: #c62828;
+            font-size: 20px;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .btn, form button {
+                display: block;
+                width: 100%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            form {
+                display: block;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if exception %}
+        <div class="error-message">
+            <h1>{{ exception }}</h1>
+        </div>
+        <a href="/upload/" class="btn btn-secondary">Upload another model</a>
+        {% else %}
+        <span class="success-badge">✓ Success</span>
+        <h1>List of Models</h1>
+        
+        <div>
+            <a href="/upload/" class="btn btn-secondary">Upload another model</a>
+            <form action="/cleaning/columns/" method="GET">
+                <button type="submit" class="btn">Variable Selection</button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            {{ table|safe }}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html> -->

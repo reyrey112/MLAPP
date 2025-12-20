@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}Model Selection{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Selection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .recommendations {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 30px;
+        }
+
+        .recommendations h2 {
+            color: #1a1a1a;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.8;
+        }
+
+        .recommendations h2 strong {
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fafafa;
+            color: #1a1a1a;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:hover {
+            border-color: #b0b0b0;
+            background: #f5f5f5;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #1a1a1a;
+            background: white;
+        }
+
+        input[type="text"]::placeholder {
+            color: #999;
+        }
+
+        .result {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1a1a1a;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result strong {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        button {
+            width: 100%;
+            background: #1a1a1a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        button:active {
+            background: #000;
+        }
+
+        button:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Choose the Models to Create</h1>
+        
+        <div class="recommendations">
+            <h2>
+                {% if simple %}
+                <strong>Simple Model:</strong> {{simple}} <br>
+                {% endif %}
+
+                {% if recommended1 %}
+                <strong>Recommended Model:</strong> {{recommended1}} <br>
+                {% endif %}
+
+                {% if recommended2 %}
+                <strong>Recommended Model:</strong> {{recommended2}} <br>
+                {% endif %}
+
+                {% if recommended3 %}
+                <strong>Recommended Model:</strong> {{recommended3}} <br>
+                {% endif %}
+
+                {% if none %}
+                {{none}} <br>
+                {% endif %}
+            </h2>
+        </div>
+            
+        <form method="POST" action="{% url 'scaler_selection'%}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="dropdown">Choose a Model</label>
+                
+                <input type="text" id="dropdown" name="models" list="models" placeholder="Choose a model...">
+                
+                <datalist id="models">
+                    {% for option in options %}
+                        <option value="{{ option }}">
+                    {% endfor %}
+                </datalist>
+                
+                <div class="result" id="result">
+                    You selected: <strong id="selected"></strong>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="modelName">Model Name</label>
+                <input type="text" id="modelName" name="model_name" placeholder="Enter a name for your model..." required>
+            </div>
+
+            <button type="submit" id="submitBtn" disabled>Start Training</button>
+        </form>
+    </div>
+
+    <script>
+        const input = document.getElementById('dropdown');
+        const result = document.getElementById('result');
+        const selected = document.getElementById('selected');
+        const datalist = document.getElementById('models');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Get all valid options from the datalist
+        function getValidOptions() {
+            return Array.from(datalist.options).map(option => option.value);
+        }
+        
+        // Check if input is valid and update button state
+        function validateInput() {
+            const validOptions = getValidOptions();
+            const isValid = input.value && validOptions.includes(input.value);
+            submitBtn.disabled = !isValid;
+            return isValid;
+        }
+        
+        // Validate input on blur (when user clicks away)
+        input.addEventListener('blur', function() {
+            if (this.value && !validateInput()) {
+                alert('Please select a valid model from the list');
+                this.value = '';
+                result.classList.remove('show');
+                submitBtn.disabled = true;
+            }
+        });
+        
+        // Show selected value and update button state
+        input.addEventListener('input', function() {
+            const validOptions = getValidOptions();
+            
+            if (this.value && validOptions.includes(this.value)) {
+                selected.textContent = this.value;
+                result.classList.add('show');
+                submitBtn.disabled = false;
+            } else if (this.value) {
+                // Typing but not yet a valid selection
+                result.classList.remove('show');
+                submitBtn.disabled = true;
+            } else {
+                result.classList.remove('show');
+                submitBtn.disabled = true;
+            }
+        });
+
+        // Prevent form submission if invalid
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (!validateInput()) {
+                e.preventDefault();
+                alert('Please select a valid model from the list');
+            }
+        });
+    </script>
+</body>
+</html>
+{% endblock content %}
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Choose the models to create</h1>
+    <h2>
+        {% if simple %}
+        Simple Model: {{simple}} <br>
+        {% endif %}
+
+        {% if recommended1 %}
+        Recommended Model: {{recommended1}} <br>
+        {% endif %}
+
+        {% if recommended2 %}
+        Recommended Model: {{recommended2}} <br>
+        {% endif %}
+
+        {% if recommended3 %}
+        Recommended Model: {{recommended3}} <br>
+        {% endif %}
+
+        {% if none %}
+        {{none}} <br>
+        {% endif %}
+    </h2>
+        
+    <form method="POST" action="/training/">
+        {% csrf_token %}
+        
+        <div class="form-group">
+           
+            <label for="dropdown">Choose an option</label>
+            
+            <input type="text" id="dropdown" name = "models" list="models" placeholder="Choose a model...">
+            
+            <datalist id="models">
+                {% for option in options %}
+                    <option value="{{ option }}">
+                {% endfor %}
+            </datalist>
+
+            <div class="result" id="result">
+                You selected: <strong id="selected"></strong>
+            </div>
+
+            <script>
+                const input = document.getElementById('dropdown');
+                const result = document.getElementById('result');
+                const selected = document.getElementById('selected');
+                const datalist = document.getElementById('models');
+                
+                // Get all valid options from the datalist
+                function getValidOptions() {
+                    return Array.from(datalist.options).map(option => option.value);
+                }
+                
+                // Validate input on blur (when user clicks away)
+                input.addEventListener('blur', function() {
+                    const validOptions = getValidOptions();
+                    
+                    if (this.value && !validOptions.includes(this.value)) {
+                        alert('Please select a valid model from the list');
+                        this.value = '';
+                        result.classList.remove('show');
+                    }
+                });
+                
+                // Show selected value
+                input.addEventListener('input', function() {
+                    const validOptions = getValidOptions();
+                    
+                    if (this.value && validOptions.includes(this.value)) {
+                        selected.textContent = this.value;
+                        result.classList.add('show');
+                    } else if (this.value) {
+                        // Typing but not yet a valid selection
+                        result.classList.remove('show');
+                    } else {
+                        result.classList.remove('show');
+                    }
+                });
+            </script>
+            
+
+        </div>
+
+        <button type="submit">Submit</button>
+    </form>
+</body> -->
