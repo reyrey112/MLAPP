@@ -9,6 +9,19 @@ import sklearn
 from model_predictions import model_predicting
 import pickle
 import matplotlib
+from zenml.client import Client
+import mlflow
+from zenml.integrations.mlflow.experiment_trackers.mlflow_experiment_tracker import (
+    MLFlowExperimentTracker,
+)
+from zenml.integrations.mlflow.model_registries.mlflow_model_registry import (
+    MLFlowModelRegistry,
+)
+from mlflow import MlflowClient
+from zenml.deployers.docker.docker_deployer import DockerDeployer
+import requests
+import tempfile
+import csv
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -17,8 +30,17 @@ from MLapp.settings import MEDIA_URL, MEDIA_ROOT
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
-
+import logging
 import os, io, uuid
+
+from zenml_helper import zenml_parse, pydantic_model
+from MLOps.run_pipeline import run
+
+from prediction_powerBI_database_util import create_database, create_tables
+import json
+
+
+# from ..MLOps.run_pipeline import
 
 # import seaborn as sns
 
@@ -52,8 +74,6 @@ def redirect_home(request: HttpRequest):
     return redirect("/home/")
 
 
-
-
 def redirect_end(request: HttpRequest, **kwargs):
     return render(request, "redirect.html", context=kwargs)
 
@@ -68,25 +88,28 @@ def home(request: HttpRequest):
         return render(request, "home.html")
 
 
+def zenml_home(request: HttpRequest):
+    return render(request, "zenml_home.html")
+
+
 def file_upload(request: HttpRequest):
     return render(request, "file_upload.html")
 
 
 def load_file(request: HttpRequest):
-    
+
     try:
         file_list = get_list_or_404(
             upload_file,
             user=request.user if request.user.is_authenticated else None,
-            guest=None if request.user.is_authenticated else request.session["guest_id"],
+            guest=(
+                None if request.user.is_authenticated else request.session["guest_id"]
+            ),
         )
-    
+
     except Http404 as e:
         return render(request, "load_file.html")
 
-
-
-    
     viewing_table = pd.DataFrame()
     length = 0
     pks = []
@@ -355,7 +378,9 @@ def graph_model_list(request: HttpRequest):
         model_list = get_list_or_404(
             saved_models,
             user=request.user if request.user.is_authenticated else None,
-            guest=None if request.user.is_authenticated else request.session["guest_id"],
+            guest=(
+                None if request.user.is_authenticated else request.session["guest_id"]
+            ),
         )
     except Http404 as e:
         return render(request, "graph_model_list.html")
@@ -536,6 +561,557 @@ def confusion_query(models: model_predicting, model_indexes):
         y = models.outlier_removal(y)
 
     return y, model.y_predictions, model.random_state, model.model_name
+
+
+def zenml_model_list(request: HttpRequest):
+    try:
+        model_list = get_list_or_404(
+            saved_models,
+            user=request.user if request.user.is_authenticated else None,
+            guest=(
+                None if request.user.is_authenticated else request.session["guest_id"]
+            ),
+        )
+    except Http404 as e:
+        return render(request, "graph_model_list.html")
+
+    viewing_table = pd.DataFrame()
+    length = 0
+    pks = []
+
+    for model in model_list:
+        pks.append(model.pk)
+        columns = {
+            "model_name": model.model_name,
+            "model_class": model.model_class,
+            "y_variable": model.y_variable,
+            "dropped_cols": model.dropped_cols,
+            "accuracy": model.accuracy,
+            "transformations": model.transformations,
+            "file_trained_on": model.file_trained_on,
+            "upload_time": model.upload_time,
+        }
+
+        for column in columns:
+
+            value = columns[column]
+            if (
+                type(value) != str
+                and value is not None
+                and column != "file_trained_on"
+                and column != "upload_time"
+            ):
+                value = str(value)[1:-1]
+
+            viewing_table.loc[length, column] = value
+
+        length = length + 1
+
+    table_html = viewing_table.to_html(
+        classes="table table-striped table-bordered", index=False
+    )
+
+    request.session["pks"] = pks
+
+    context = {"table": table_html}
+
+    return render(request, "zenml_model_list.html", context)
+
+
+def zenml_train_pipeline(request: HttpRequest):
+    # send all parameters to class for zenml to use
+    # make it so you can choose parametrs from models stored in django databse to zenml
+    model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
+
+    pks = request.session["pks"]
+
+    model_pks = [pks[model_index] for model_index in model_indexes]
+    pydantic_zenml_help = zenml_parse(**zenml_query(model_pks[0]))
+
+    zenml_help = pydantic_model(zenml_data=pydantic_zenml_help)
+
+    try:
+        uri = run(pipeline="train", zenml_help=zenml_help)
+        error = str(uri)
+    except Exception as e:
+        logging.exception(msg="an error occured")
+        error = str(e)
+        raise e
+
+    return HttpResponse(error)
+
+
+def zenml_query(pk):
+
+    model = get_object_or_404(saved_models, pk=pk)
+
+    model: saved_models
+    parameters = {
+        "model_name": model.model_name,
+        "model_class": model.model_class,
+        "y_variable": model.y_variable,
+        "dropped_columns": model.dropped_cols,
+        "transformations": model.transformations,
+        "outliers": model.outliers,
+        "file_trained_on": model.file_trained_on.file.path,
+        "random_state": model.random_state,
+    }
+
+    return parameters
+
+
+def zenml_logged_list(request: HttpRequest):
+    if "update" in request.GET:
+        if request.GET["update"] == "true":
+            try:
+                viewing_table, model_names, _ = get_registered_models_list()
+            except Exception as e:
+                logging.exception(msg="an error occured")
+                raise e
+
+            if viewing_table.empty:
+                return render(request, "zenml_logged_model_list.html")
+
+            table_html = viewing_table.to_html(
+                classes="table table-striped table-bordered", index=False
+            )
+
+            request.session["model_names"] = model_names
+
+            context = {"table": table_html, "logged": True}
+
+            return render(request, "zenml_registered_model_list.html", context)
+
+    try:
+        viewing_table, uri_list, run_names = get_logged_models_list()
+    except Exception as e:
+        logging.exception(msg="an error occured")
+        error = str(e)
+        raise e
+
+    if uri_list == None:
+        return render(request, "zenml_logged_model_list.html")
+
+    table_html = viewing_table.to_html(
+        classes="table table-striped table-bordered", index=False
+    )
+
+    request.session["uri_list"] = uri_list
+    request.session["run_names"] = run_names
+
+    context = {"table": table_html}
+
+    if request.method == "POST":
+        model_names = request.session["model_names"]
+        model_indexes = [
+            int(index) for index in request.POST.getlist("selected_models")
+        ]
+        model_names = [model_names[model_index] for model_index in model_indexes]
+        model_name = model_names[0]
+        context["model_name"] = model_name
+
+    return render(request, "zenml_logged_model_list.html", context)
+
+
+def get_logged_models_list():
+    # Get the active MLflow experiment tracker from ZenML
+    viewing_df = pd.DataFrame()
+    length = 0
+    uri_list = []
+    run_names = []
+
+    client = Client()
+    experiment_tracker: MLFlowExperimentTracker
+    experiment_tracker = client.active_stack.experiment_tracker
+
+    # Get the MLflow tracking URI
+    # tracking_uri = experiment_tracker.get_tracking_uri()
+    # print(tracking_uri)
+    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+
+    # Get experiment by name or ID
+    experiment_name = "train_pipeline"
+    experiment = mlflow.get_experiment_by_name(experiment_name)
+
+    if experiment:
+        experiment_id = experiment.experiment_id
+
+        # Search for all runs in the experiment
+        runs = mlflow.search_runs(experiment_ids=[experiment_id])
+        runs = pd.DataFrame(runs)
+        # Filter runs that have logged models
+
+        logging.warning(f"Found {len(runs)} runs with logged models")
+
+        # Get detailed model information from each run
+
+        for idx, run in runs.iterrows():
+            run_id = run["run_id"]
+            uri = run["artifact_uri"]
+            uri_list.append(uri)
+            run_name = run.get("tags.mlflow.runName", "No name set")
+            run_names.append(run_name)
+
+            start_timestamp: pd.Timestamp
+
+            start_timestamp = run["start_time"]
+            start_time = start_timestamp.to_pydatetime().replace(
+                microsecond=0, tzinfo=None
+            )
+
+            viewing_df.loc[length, "run_name"] = run_name
+            viewing_df.loc[length, "date"] = start_time
+            length = length + 1
+
+        return viewing_df, uri_list, run_names
+
+    else:
+        return None, None, None
+
+
+def zenml_register_pipeline(request: HttpRequest):
+    model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
+
+    run_names = request.session["run_names"]
+    model_run_names = [run_names[model_index] for model_index in model_indexes]
+    run_name = model_run_names[0]
+
+    uri_list = request.session["uri_list"]
+
+    model_uris = [uri_list[model_index] for model_index in model_indexes]
+
+    uri = model_uris[0]
+
+    pydantic_zenml_help = zenml_parse(
+        model_name=(
+            request.POST["model_name"] if request.POST["model_name"] != "" else run_name
+        ),
+        uri=uri,
+        run_name=run_name,
+        registered_model_name=(
+            request.POST["registered_model"]
+            if "registered_model" in request.POST
+            else "None"
+        ),
+    )
+    zenml_help = pydantic_model(zenml_data=pydantic_zenml_help)
+
+    try:
+        run(pipeline="register", zenml_help=zenml_help)
+
+    except Exception as e:
+        logging.exception(msg="an error occured")
+        error = str(e)
+        raise e
+
+    return HttpResponse()
+
+
+def zenml_register_list(request: HttpRequest):
+    from zenml.client import Client
+
+    # Get the root path of the active artifact store
+    root_path = Client().active_stack.artifact_store.path
+
+    logging.warning(f"The artifact store root path is: {root_path}")
+
+    try:
+        viewing_table, registered_model_names, zenml_run_names = (
+            get_registered_models_list()
+        )
+    except Exception as e:
+        logging.exception(msg="an error occured")
+        raise e
+
+    if viewing_table.empty:
+        return render(request, "zenml_registered_model_list.html")
+
+    table_html = viewing_table.to_html(
+        classes="table table-striped table-bordered", index=False
+    )
+
+    request.session["registered_model_names"] = registered_model_names
+    request.session["zenml_run_names"] = zenml_run_names
+
+    context = {"table": table_html}
+
+    return render(request, "zenml_registered_model_list.html", context)
+
+
+def get_registered_models_list():
+    client = Client()
+    model_registry: MLFlowModelRegistry
+    model_registry = client.active_stack.model_registry
+    model_list = model_registry.list_models()
+    mlflow_client = MlflowClient()
+
+    viewing_df = pd.DataFrame()
+    length = 0
+    model_names = []
+    zenml_run_names = []
+
+    if len(model_list) > 0:
+        for model in model_list:
+            viewing_df.loc[length, "model_name"] = model.name
+
+            try:
+                version = model_registry.get_latest_model_version(model.name).version
+                run_name = mlflow_client.get_model_version(model.name, version).tags[
+                    "zenml_run_name"
+                ]
+                viewing_df.loc[length, "version"] = version
+                viewing_df.loc[length, "run_name"] = run_name
+                zenml_run_names.append(run_name)
+
+            except AttributeError as e:
+                print(f"{e}")
+                viewing_df.loc[length, "version"] = "0"
+                viewing_df.loc[length, "run_name"] = model.name
+                zenml_run_names.append(model.name)
+
+            try:
+                viewing_df.loc[length, "stage"] = (
+                    model_registry.get_latest_model_version(model.name).stage.name
+                )
+            except AttributeError as e:
+                viewing_df.loc[length, "stage"] = "N/A"
+
+            model_names.append(model.name)
+            length = length + 1
+
+    return viewing_df, model_names, zenml_run_names
+
+
+def zenml_deploy_pipeline(request: HttpRequest):
+
+    model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
+    registered_model_names = request.session["registered_model_names"]
+    zenml_run_names = request.session["zenml_run_names"]
+    registered_model_name = [
+        registered_model_names[model_index] for model_index in model_indexes
+    ][0]
+    zenml_run_name = [zenml_run_names[model_index] for model_index in model_indexes][0]
+
+    pydantic_zenml_help = zenml_parse(
+        registered_model_name=registered_model_name, run_name=zenml_run_name
+    )
+    zenml_help = pydantic_model(zenml_data=pydantic_zenml_help)
+
+    if "deployment" in request.POST:
+        deployment_name = request.POST["deployment"]
+    else:
+        if request.POST["model_name"] != "":
+            deployment_name = request.POST["model_name"]
+        else:
+            deployment_name = zenml_run_name
+
+    try:
+        run(
+            pipeline="deploy",
+            zenml_help=zenml_help,
+            deployment_name=deployment_name,
+        )
+
+    except Exception as e:
+        logging.exception(msg="an error occured")
+        error = str(e)
+        raise e
+
+    return HttpResponse()
+
+
+def zenml_deploy_list(request: HttpRequest):
+
+    if request.method == "POST":
+        if "deployed" in request.POST:
+            model_indexes = [
+                int(index) for index in request.POST.getlist("selected_models")
+            ]
+            deployment_names = request.session["deployment_names"]
+            names = [deployment_names[model_index] for model_index in model_indexes]
+            deployment_name = names[0]
+
+            try:
+                viewing_table, registered_model_names, zenml_run_names = (
+                    get_registered_models_list()
+                )
+            except Exception as e:
+                logging.exception(msg="an error occured")
+                raise e
+
+            if viewing_table.empty:
+                return render(request, "zenml_registered_model_list.html")
+
+            table_html = viewing_table.to_html(
+                classes="table table-striped table-bordered", index=False
+            )
+
+            request.session["registered_model_names"] = registered_model_names
+            request.session["zenml_run_names"] = zenml_run_names
+
+            context = {"table": table_html, "deployment": deployment_name}
+
+            return render(request, "zenml_registered_model_list.html", context)
+
+    else:
+        client = Client()
+        # deployer: DockerDeployer
+        model_registry: MLFlowModelRegistry
+        model_registry = client.active_stack.model_registry
+        # deployer = client.active_stack.deployer
+        # deployed_models = deployer
+
+        deployments = client.list_deployments()
+
+        viewing_df = pd.DataFrame()
+        length = 0
+        deployment_names = []
+        deployment_urls = []
+
+        for deployment in deployments:
+
+            viewing_df.loc[length, "Pipeline_name"] = deployment.pipeline.name
+            viewing_df.loc[length, "Deployment name"] = deployment.name
+
+            registered_model_name = (
+                deployment.snapshot.pipeline_configuration.init_hook_kwargs[
+                    "registered_model_name"
+                ]
+            )
+
+            viewing_df.loc[length, "Registered_model_name"] = registered_model_name
+
+            try:
+                version = model_registry.get_latest_model_version(
+                    registered_model_name
+                ).version
+
+                viewing_df.loc[length, "version"] = version
+
+            except AttributeError as e:
+                print(f"{e}")
+                viewing_df.loc[length, "version"] = "0"
+
+            viewing_df.loc[length, "Status"] = deployment.status
+
+            # viewing_df[length, "version"] = deployment.config.model_version
+            length = length + 1
+            deployment_names.append(deployment.name)
+            deployment_urls.append(deployment.url)
+            # deployed_pipeline_names.append(deployment.config.pipeline_name)
+
+        request.session["deployment_names"] = deployment_names
+        request.session["deployment_urls"] = deployment_urls
+
+        table_html = viewing_df.to_html(
+            classes="table table-striped table-bordered", index=False
+        )
+
+        context = {"table": table_html}
+
+        return render(request, "zenml_deployed_model_list.html", context)
+
+
+def upload_prediction_csv(request: HttpRequest):
+    model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
+    deployment_names = request.session["deployment_names"]
+    deployment_urls = request.session["deployment_urls"]
+
+    deployment_name = [deployment_names[model_index] for model_index in model_indexes][
+        0
+    ]
+    deployment_url = [deployment_urls[model_index] for model_index in model_indexes][0]
+
+    request.session["deployment_name"] = deployment_name
+    request.session["deployment_url"] = deployment_url
+
+    return render(request, "zenml_prediction_csv_upload.html")
+
+
+def invoke_deployment(request: HttpRequest):
+    deployment_url = request.session["deployment_url"]
+    invoke_url = f"{deployment_url}/invoke"
+
+    user_file = request.FILES["file"]
+    pred_df = pd.read_csv(user_file)
+    pred_df = pred_df.drop(
+        [
+            "Formulation_Number",
+            "Main_Formulation_Number",
+            "Sub_Formulation_Number",
+            "Viscosity",
+        ],
+        axis=1,
+    )
+
+    # pydantic_zenml_help = zenml_parse(run_name=zenml_run_name)
+
+    predictions = []
+
+    for index, row in pred_df.iterrows():
+        row_dict = row.to_dict()
+        row_json = json.dumps({"parameters": row_dict})
+        response = requests.post(
+            invoke_url,
+            data=row_json,
+            headers={"Content-Type": "application/json"},
+        )
+        response.raise_for_status()
+        prediction = response.json()["outputs"]["output"][0]
+        predictions.append(prediction)
+
+    with tempfile.NamedTemporaryFile(
+        mode="w+b", delete=True, suffix=".csv", newline=""
+    ) as temp_file:
+        for chunk in user_file.chunks():
+            temp_file.write(chunk)
+
+        temp_file.flush()
+
+        # run(pipeline='batch',
+        #     zenml_help=zenml_help,
+        #     file_path=temp_file.name)
+
+    return HttpResponse
+
+
+def upload_batch_csv(request: HttpRequest):
+    model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
+    zenml_run_names = request.session["zenml_run_names"]
+    zenml_run_name = [zenml_run_names[model_index] for model_index in model_indexes][0]
+    request.session["zenml_run_name"] = zenml_run_name
+
+    return render(request, "zenml_inference_csv_upload.html")
+
+
+def batch_inference(request: HttpRequest):
+    user_file = request.FILES["file"]
+    pred_df = pd.read_csv(user_file)
+
+    zenml_run_name = request.session["zenml_run_name"]
+
+    pred_df = pred_df.drop(
+        [
+            "Formulation_Number",
+            "Main_Formulation_Number",
+            "Sub_Formulation_Number",
+            "Viscosity",
+        ],
+        axis=1,
+    )
+    pydantic_zenml_help = zenml_parse(run_name=zenml_run_name)
+    zenml_help = pydantic_model(zenml_data=pydantic_zenml_help)
+
+    with tempfile.NamedTemporaryFile(
+        mode="w+", delete=True, suffix=".csv"
+    ) as temp_file:
+        pred_df.to_csv(temp_file.name, index=False)
+
+        run(pipeline = 'batch',
+            zenml_help=zenml_help,
+            file_path=temp_file.name)
+
+    return HttpResponse
 
 
 # def graph_residuals(request : HttpRequest):

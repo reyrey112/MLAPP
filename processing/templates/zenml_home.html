@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Show Table{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            padding: 40px;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #3a3a3a;
+        }
+
+        .button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 200px;
+            height: 200px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 24px;
+                max-width: 400px;
+            }
+
+            .button {
+                height: 120px;
+                font-size: 16px;
+            }
+        }
+        
+        .button-1 { 
+            background: linear-gradient(135deg, #d946ef 0%, #a21caf 100%);
+            border: 1px solid rgba(217, 70, 239, 0.3);
+        }
+        
+        .button-1:hover {
+            background: linear-gradient(135deg, #e879f9 0%, #c026d3 100%);
+            box-shadow: 0 8px 24px rgba(217, 70, 239, 0.4);
+        }
+        
+        .button-2 { 
+            background: linear-gradient(135deg, #c026d3 0%, #86198f 100%);
+            border: 1px solid rgba(192, 38, 211, 0.3);
+        }
+        
+        .button-2:hover {
+            background: linear-gradient(135deg, #d946ef 0%, #9333ea 100%);
+            box-shadow: 0 8px 24px rgba(192, 38, 211, 0.4);
+        }
+        
+        .button-3 { 
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        
+        .button-3:hover {
+            background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.4);
+        }
+        
+        .button-4 { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .button-4:hover {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            margin: 15% auto;
+            padding: 40px;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            text-align: center;
+        }
+
+        .modal h2 {
+            color: white;
+            margin-bottom: 24px;
+            font-size: 24px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 32px;
+        }
+
+        .modal-button {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-button-yes {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .modal-button-yes:hover {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .modal-button-no {
+            background: linear-gradient(135deg, #c026d3 0%, #86198f 100%);
+            color: white;
+            border: 1px solid rgba(192, 38, 211, 0.3);
+        }
+
+        .modal-button-no:hover {
+            background: linear-gradient(135deg, #d946ef 0%, #9333ea 100%);
+            box-shadow: 0 4px 12px rgba(192, 38, 211, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'zenml_model_list'%}" class="button button-1">Log a Model</a>
+        <a href="#" class="button button-2" id="registerBtn">Register Model</a>
+        <a href="{% url 'zenml_register_list'%}" class="button button-3">Deploy Model</a>
+        <a href="{% url 'zenml_deploy_list'%}" class="button button-4">View Deployed Models</a>
+    </div>
+
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <h2>Are you updating a currently registered model?</h2>
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-yes" id="yesBtn">Yes</button>
+                <button class="modal-button modal-button-no" id="noBtn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('updateModal');
+        const registerBtn = document.getElementById('registerBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+
+        registerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+        });
+
+        yesBtn.addEventListener('click', function() {
+            // Redirect to the register page with update parameter
+            window.location.href = "{% url 'zenml_logged_list' %}?update=true";
+        });
+
+        noBtn.addEventListener('click', function() {
+            // Redirect to the register page without update parameter
+            window.location.href = "{% url 'zenml_logged_list' %}";
+        });
+
+        // Close modal if user clicks outside of it
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+{% endblock content %}
+
+

@@ -1,3 +1,5 @@
+#Place in util folder
+
 import pandas as pd
 import numpy as np
 from sklearn.svm import LinearSVC, LinearSVR, SVR, SVC
@@ -8,7 +10,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn import metrics
-import random
+import random, logging
 
 # df = pd.read_csv(r"C:\Users\reyde\Desktop\Formulations.csv")
 # x = df.drop(["Viscosity"], axis=1)
@@ -240,20 +242,27 @@ class model_predicting:
         return x_train_scaled, x_test_scaled
 
     def train_classifier(self, model_name, x_train, x_test, y_train, y_test):
+        logging.info(f"Training {str(model_name)} model with data")
+
         model = model_dict[model_name]()
         model.fit(x_train, y_train)
         accuracy = model.score(x_test, y_test)
         y_pred = model.predict(x_test)
 
+        logging.info(f"{str(model_name)}model trained successfully")
+
         return model, accuracy, y_pred
 
     def train_regressor(self, model_name, x_train, x_test, y_train, y_test):
+        logging.info(f"Training {str(model_name)} model with data")
+
         model = model_dict[model_name]()
         model.fit(x_train, y_train)
         y_pred = model.predict(x_test)
         residuals = np.subtract(y_test, y_pred)
         accuracy = model.score(x_test, y_test)
 
+        logging.info(f"{str(model_name)}model trained successfully")
         return model, accuracy, y_pred
     
     def confusion_matrix(self, y, y_pred, state):

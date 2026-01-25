@@ -10,6 +10,8 @@
     <style>
         body {
             position: relative;
+            background: #f5f5f5;
+
             /* width: 300px;
             height: 200px;
             border: 1px solid black; */
@@ -55,6 +57,8 @@
                 Welcome: 
             </span>
             <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'zenml_home' %}">ZenML</a>
+
             <a href="#" onclick="document.getElementById('login_form').submit(); return false">Login</a>
             <form action="{% url 'login'%}" method="POST" id="login_form" style="display: none;">
                     {% csrf_token %}

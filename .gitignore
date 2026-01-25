@@ -11,6 +11,12 @@ Here's the ultimate Django gitignore#
 *.png
 /user_files
 
+#zenml
+.zen
+
+#mlflow
+mlflow.db
+
 # Django #
 *.log
 *.pot
