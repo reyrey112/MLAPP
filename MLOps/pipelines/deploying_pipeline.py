@@ -42,11 +42,6 @@ def get_run_name(model_name: str):
     client = Client()
     model_registry: MLFlowModelRegistry
     logging.warning("getting active model registry")
-    # client.update_stack_component(
-    #     name_id_or_prefix="mlflow_postgres",
-    #     component_type=StackComponentType("experiment_tracker"),
-    #     configuration={"tracking_uri": "http://127.0.0.1:5000"},
-    # )
 
     model_registry = client.active_stack.model_registry
 
@@ -80,13 +75,13 @@ def get_prediction_model(run_name: str):
     return model
 
 
-# docker_settings = DockerSettings(required_integrations=[MLFLOW])
+docker_settings = DockerSettings(required_integrations=[MLFLOW])
 import os
 
 
 @pipeline(
     enable_cache=False,
-    settings={"docker": DockerSettings(required_integrations=[MLFLOW])},
+    settings={"docker": docker_settings},
 )
 def deploy_pipeline(
     zenml_help: pydantic_model,
@@ -110,7 +105,7 @@ def deploy_pipeline(
 def init_model(registered_model_name: str = "None", run_name: str = "None"):
     logging.warning("start init model")
     logging.warning(f"{registered_model_name}")
-    # run_name = get_run_name(registered_model_name)
+
     loaded_model = get_prediction_model(run_name)
     logging.warning("complete init model")
 
@@ -135,12 +130,10 @@ def model_predictions(x_dict: dict):
 root_path = Client().active_stack.artifact_store.path
 docker_settings = DockerSettings(apt_packages=["build-essential"])
 deployer_settings = DockerDeployerSettings(
-    port=8080, run_args={"network": "mlflow_network"}
+    run_args={"network": "mlflow_network"}
 )
 
-# deployer_settings = DockerDeployerSettings(
-#     port=8080, allocate_port_if_busy=True, port_range=(8000, 65535)run_args={"network": "mlflow_network"}
-# )
+
 orc = LocalDockerOrchestratorSettings(run_args={"network": "mlflow_network"})
 
 

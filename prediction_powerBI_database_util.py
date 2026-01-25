@@ -2,7 +2,11 @@ import psycopg2
 from psycopg2 import sql
 import logging
 import pandas as pd
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()
 
 def create_database(db_name, user, password, host, port):
     conn = None
@@ -118,7 +122,7 @@ def table_exists_check(db_name, user, password, host, port):
 
 def write_to_DB(db_name, user, password, host, port, table_name, data: pd.DataFrame):
     with psycopg2.connect(
-        database=db_name, user=user, password=password, host="172.18.0.2", port = 5432
+        database=db_name, user=user, password=password, host=os.environ.get("POSTGRES_DB_HOST"), port = os.environ.get("POSTGRES_DB_PORT")
     ) as conn:
         with conn.cursor() as cur:
 

@@ -11,19 +11,17 @@ from zenml.orchestrators.local_docker.local_docker_orchestrator import (
     LocalDockerOrchestratorSettings,
 )
 import mlflow
+from MLapp.settings import MEDIA_ROOT
 
-custom_build = DockerBuildConfig(
-    dockerignore="/mnt/c/Users/reyde/Desktop/Coding_Project/Portfolio/MLapp/.dockerignore"
-)
-# docker_settings = DockerSettings(dockerfile="Dockerfile", dockerignore=".dockerignore", build_context_root=".")
+
 docker_settings = DockerSettings(
-    parent_image_build_config=custom_build, apt_packages=["build-essential"]
+    apt_packages=["build-essential"]
 )
 orc = LocalDockerOrchestratorSettings(
     run_args={
         "volumes": {
-            "/home/reyde/Linux_mlapp/MLapp/user_files/csvs": {
-                "bind": "/home/reyde/Linux_mlapp/MLapp/user_files/csvs",
+            f"{MEDIA_ROOT}/csvs": {
+                "bind":  f"{MEDIA_ROOT}/csvs",
                 "mode": "rw",
             }
         }
@@ -55,12 +53,3 @@ def train_pipeline(zenml_help: pydantic_model):
     r2_score, rmse = evaluate_model(model, x_test, y_test)
 
 
-# @pipeline(enable_cache=True)
-# def existing_pipeline(zenml_help: pydantic_model):
-#     """
-#     Docstring for existing_pipeline
-
-#     :param zenml_help: Description
-#     :type zenml_help: pydantic_model
-#     """
-#     df = ingest_df(zenml_help.zenml_data.data_path)

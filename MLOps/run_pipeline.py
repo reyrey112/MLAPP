@@ -25,7 +25,6 @@ def run(
     pipeline: str, zenml_help: pydantic_model = None, deployment_name: str = "None", file_path : str = 'none'
 ):
 
-    # mlflow.set_tracking_uri("http://172.18.0.3:5000")
     uri = experiment_tracker.get_tracking_uri()
     logging.warning(uri)
     if pipeline == "train":
@@ -40,9 +39,7 @@ def run(
         register_pipeline(zenml_help)
         return uri
 
-    # if pipeline == "deploy":
-    #     deploy_pipeline(zenml_help)
-    #     return uri
+
     if pipeline == 'batch':
         batch_formulation_pipeline(zenml_help, file_path)
         return uri

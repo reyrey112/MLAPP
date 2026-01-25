@@ -25,6 +25,11 @@ from sklearn.base import RegressorMixin
 from typing import Tuple, Any
 import numpy as np
 
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
 
 @step
 def load_data(file_path: str):
@@ -99,8 +104,8 @@ def batch_formulation_pipeline(zenml_help: pydantic_model, file_path: str):
         db_name="powerbi_prod_tables",
         user="postgres",
         password="password",
-        host="172.18.0.2",
-        port="5432",
+        host=os.environ.get("POSTGRES_DB_HOST"),
+        port=os.environ.get("POSTGRES_DB_POST"),
         table_name="formulation_table",
         data=data_new,
     )

@@ -189,11 +189,6 @@ class model_predicting:
 
         y_no_outliers = y[((y >= lower) & (y <= upper))]
 
-        # if y.equals(y_no_outliers):
-        #     outliers = True
-
-        # else: 
-        #     outliers = False
 
         return y_no_outliers
 

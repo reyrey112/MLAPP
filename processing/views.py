@@ -38,7 +38,11 @@ from MLOps.run_pipeline import run
 
 from prediction_powerBI_database_util import create_database, create_tables
 import json
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()
 
 # from ..MLOps.run_pipeline import
 
@@ -727,7 +731,7 @@ def get_logged_models_list():
     # Get the MLflow tracking URI
     # tracking_uri = experiment_tracker.get_tracking_uri()
     # print(tracking_uri)
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri(os.environ.get("POSTGRES_LOCALHOSTPORT"))
 
     # Get experiment by name or ID
     experiment_name = "train_pipeline"
@@ -955,11 +959,9 @@ def zenml_deploy_list(request: HttpRequest):
 
     else:
         client = Client()
-        # deployer: DockerDeployer
         model_registry: MLFlowModelRegistry
         model_registry = client.active_stack.model_registry
-        # deployer = client.active_stack.deployer
-        # deployed_models = deployer
+  
 
         deployments = client.list_deployments()
 
@@ -1044,7 +1046,6 @@ def invoke_deployment(request: HttpRequest):
         axis=1,
     )
 
-    # pydantic_zenml_help = zenml_parse(run_name=zenml_run_name)
 
     predictions = []
 
@@ -1068,9 +1069,7 @@ def invoke_deployment(request: HttpRequest):
 
         temp_file.flush()
 
-        # run(pipeline='batch',
-        #     zenml_help=zenml_help,
-        #     file_path=temp_file.name)
+
 
     return HttpResponse
 
