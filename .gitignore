@@ -10,6 +10,7 @@ Here's the ultimate Django gitignore#
 # My Files for custom Django Project # 
 *.png
 /user_files
+/static
 
 #zenml
 .zen

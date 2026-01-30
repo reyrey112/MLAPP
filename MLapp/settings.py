@@ -16,6 +16,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 from dotenv import load_dotenv
 import os
 
@@ -23,13 +24,43 @@ import os
 load_dotenv()
 
 MEDIA_ROOT = BASE_DIR / "user_files"
+
+# STATIC_ROOT = BASE_DIR / "static"
+
 MEDIA_URL = "/user_files/"
+
 LOGIN_REDIRECT_URL = "/home/"
 LOGIN_URL = "/login/"
 LOGOUT_REDIRECT_URL = "/home/"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
+# AWS_ACCESS_KEY_ID = ''
+#  AWS_SECRET_ACCESS_KEY = ""
 
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_REGION_NAME = 'us-east-2'
+
+STORAGES = {
+    # Media
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        "OPTIONS": {
+            "location": "media"
+        }
+    },
+
+    #CSS and JS
+    "staticfiles": {
+        "BACKEND":"storages.backends.s3boto3.S3StaticStorage",
+        "OPTIONS": {
+            "location": "static"
+        }
+    }
+}
+
+
+# STATICFILES_DIRS = []
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -53,6 +84,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "processing",
     "rest_framework.authtoken",
+    "storages",
 ]
 
 MIDDLEWARE = [
