@@ -657,7 +657,9 @@ def zenml_query(pk):
         "dropped_columns": model.dropped_cols,
         "transformations": model.transformations,
         "outliers": model.outliers,
-        "file_trained_on": model.file_trained_on.file.path,
+        # For local dev: 
+        # "file_trained_on": model.file_trained_on.file.path,
+        "file_trained_on": model.file_trained_on.file.name,
         "random_state": model.random_state,
     }
 
