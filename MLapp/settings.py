@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,44 +24,50 @@ import os
 
 load_dotenv()
 
-MEDIA_ROOT = BASE_DIR / "user_files"
-
-# STATIC_ROOT = BASE_DIR / "static"
-
-MEDIA_URL = "/user_files/"
+MEDIA_ROOT = BASE_DIR / f"{os.environ.get("MEDIA_URL")}"
+MEDIA_URL = f"/{os.environ.get("MEDIA_URL")}/"
 
 LOGIN_REDIRECT_URL = "/home/"
 LOGIN_URL = "/login/"
 LOGOUT_REDIRECT_URL = "/home/"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# AWS_ACCESS_KEY_ID = ''
-#  AWS_SECRET_ACCESS_KEY = ""
+
+DATABASES = {
+    "default": dj_database_url.config(default=os.environ.get("DATABASE_URL"))
+}
+
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_FILE_OVERWRITE = False
-AWS_S3_REGION_NAME = 'us-east-2'
+AWS_S3_REGION_NAME = "us-east-2"
 
 STORAGES = {
     # Media
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-        "OPTIONS": {
-            "location": "media"
-        }
+        "OPTIONS": {"location": "media"},
     },
-
-    #CSS and JS
+    # CSS and JS
     "staticfiles": {
-        "BACKEND":"storages.backends.s3boto3.S3StaticStorage",
-        "OPTIONS": {
-            "location": "static"
-        }
-    }
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        "OPTIONS": {"location": "static"},
+    },
 }
 
+    # STATIC_ROOT = BASE_DIR / "static"
+    # DATABASES = {
+    #     "default": {
+    #         "ENGINE": "django.db.backends.sqlite3",
+    #         "NAME": BASE_DIR / "db.sqlite3",
+    #     }
+    # }
 
-# STATICFILES_DIRS = []
+
+# COMMENT FOR CLOUD
+STATICFILES_DIRS = []
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -119,13 +126,6 @@ WSGI_APPLICATION = "MLapp.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
 
 
 # Password validation
