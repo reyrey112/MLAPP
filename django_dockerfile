@@ -1,0 +1,25 @@
+FROM python:3.13-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends 'build-essential'
+
+COPY requirements.txt .
+
+RUN pip install uv
+RUN uv venv ./.venv
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV DJANGO_SETTINGS_MODULE="MLapp.settings"
+
+RUN uv pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+RUN chmod +x ./entrypoint.sh
+
+CMD ["./entrypoint.sh"]

@@ -12,6 +12,8 @@ Here's the ultimate Django gitignore#
 /user_files
 /static
 
+
+
 #zenml
 .zen
 
