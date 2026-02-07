@@ -129,13 +129,10 @@ def model_predictions(x_dict: dict):
 
 root_path = Client().active_stack.artifact_store.path
 docker_settings = DockerSettings(apt_packages=["build-essential"])
-deployer_settings = DockerDeployerSettings(
-    run_args={"network": "mlflow_network"}
-)
+deployer_settings = DockerDeployerSettings(run_args={"network": "mlflow_network"})
 
 
 orc = LocalDockerOrchestratorSettings(run_args={"network": "mlflow_network"})
-
 
 
 @pipeline(
@@ -147,7 +144,7 @@ orc = LocalDockerOrchestratorSettings(run_args={"network": "mlflow_network"})
         "orchestrator": orc,
     },
 )
-def formulation_pipeline(
+def deploying_pipeline(
     Mixing_Time: float = 0.0,
     Active_1: float = 0.0,
     Active_2: float = 0.0,

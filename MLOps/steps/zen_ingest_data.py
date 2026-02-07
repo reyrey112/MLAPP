@@ -1,6 +1,8 @@
 import logging
 import pandas as pd
 from zenml import step
+from django.conf import settings
+media_root = settings.MEDIA_ROOT
 
 class IngestData:
     """
@@ -16,7 +18,9 @@ class IngestData:
         :param data_path: path to the datapath
         :type data_path: str
         """
-        self.data_path = data_path
+        self.data_path = f"{data_path}"
+        # self.data_path = f"{media_root}/{data_path}"
+
 
     def get_data(self):
         """
@@ -42,7 +46,7 @@ def ingest_df(data_path:str) -> pd.DataFrame:
     """
 
     try:
-        ingest_data = IngestData(data_path)
+        ingest_data = IngestData(f"{data_path}")
         df = ingest_data.get_data()
         return df
     except Exception as e:

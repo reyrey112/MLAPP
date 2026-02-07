@@ -26,12 +26,12 @@ import csv
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
-from MLapp.settings import MEDIA_URL, MEDIA_ROOT
+from MLapp.settings import MEDIA_URL, MEDIA_ROOT, BASE_DIR
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 import logging
-import os, io, uuid
+import os, io, uuid, socket
 
 from zenml_helper import zenml_parse, pydantic_model
 from MLOps.run_pipeline import run
@@ -39,22 +39,9 @@ from MLOps.run_pipeline import run
 from prediction_powerBI_database_util import create_database, create_tables
 import json
 from dotenv import load_dotenv
-import os
 
 
 load_dotenv()
-
-# from ..MLOps.run_pipeline import
-
-# import seaborn as sns
-
-# data = pd.read_csv(r"C:\Users\reyde\Desktop\Formulations.csv")
-
-
-# plot = sns.histplot(data=data, y="Viscosity")
-
-
-# Create your views here.
 
 
 def generate_guest_id():
@@ -215,7 +202,7 @@ def show_table(request: HttpRequest):
 
     elif "dk" in request.session:
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file.name
         )
 
         table_html = df.to_html(
@@ -234,11 +221,10 @@ def show_table(request: HttpRequest):
 def x_variable_selection(request: HttpRequest):
     if request.method == "GET":
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file.name
         )
 
         context = {"options": df.columns.values}
-
         return render(request, "x_variable_selection.html", context)
 
     else:
@@ -248,7 +234,7 @@ def x_variable_selection(request: HttpRequest):
 def y_variable_selection(request: HttpRequest):
     if request.method == "POST":
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file.name
         )
 
         columns_to_drop = request.POST.getlist("columns")
@@ -267,7 +253,7 @@ def y_variable_selection(request: HttpRequest):
 def model_selection(request: HttpRequest):
     if request.method == "POST":
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file.name
         )
         y_variable = request.POST["dropdown"]
         request.session["y_variable"] = y_variable
@@ -296,7 +282,7 @@ def model_selection(request: HttpRequest):
 def scaler_selection(request: HttpRequest):
     if request.method == "POST":
         file = get_object_or_404(upload_file, pk=request.session["dk"])
-        df = pd.read_csv(file.file.path)
+        df = pd.read_csv(file.file.name)
         request.session["model_class"] = request.POST["models"]
         request.session["model_name"] = request.POST["model_name"]
 
@@ -327,7 +313,7 @@ def train_model(request: HttpRequest):
 
         file = get_object_or_404(upload_file, pk=request.session["dk"])
         dropped_cols = request.session["columns_to_drop"]
-        df = pd.read_csv(file.file.path)
+        df = pd.read_csv(file.file.name)
         df = df.drop(dropped_cols, axis=1)
         y_variable = request.session["y_variable"]
         y_class = request.session["y_class"]
@@ -365,12 +351,6 @@ def train_model(request: HttpRequest):
                 None if request.user.is_authenticated else request.session["guest_id"]
             ),
         )
-
-        # request.session["model_name"]
-        # request.session["y_class"]
-        # request.session["y_variable"]
-        # request.session["columns_to_drop"]
-        # request.session["model_class"]
 
         return render(request, "train_model.html")
     else:
@@ -558,7 +538,7 @@ def confusion_query(models: model_predicting, model_indexes):
     ]
 
     file = get_object_or_404(upload_file, pk=model.file_trained_on)
-    df = pd.read_csv(file.file.path)
+    df = pd.read_csv(file.file.name)
     y = df[model.y_variable]
 
     if model.outliers is True:
@@ -622,34 +602,42 @@ def zenml_model_list(request: HttpRequest):
     return render(request, "zenml_model_list.html", context)
 
 
-def zenml_train_pipeline(request: HttpRequest):
+def zenml_log_pipeline(request: HttpRequest):
     # send all parameters to class for zenml to use
     # make it so you can choose parametrs from models stored in django databse to zenml
+    from tempfile import NamedTemporaryFile
+    import pickle
+
     model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
 
     pks = request.session["pks"]
 
     model_pks = [pks[model_index] for model_index in model_indexes]
-    pydantic_zenml_help = zenml_parse(**zenml_query(model_pks[0]))
+    parameters, model_pickle = zenml_query(model_pks[0])
+    with NamedTemporaryFile(mode="wb", suffix=".pkl", dir="./tmp") as tmp:
+        pickle.dump(model_pickle, tmp)
+        parameters["model_path"] = tmp.name
 
-    zenml_help = pydantic_model(zenml_data=pydantic_zenml_help)
+        pydantic_zenml_help = zenml_parse(**parameters)
 
-    try:
-        uri = run(pipeline="train", zenml_help=zenml_help)
-        error = str(uri)
-    except Exception as e:
-        logging.exception(msg="an error occured")
-        error = str(e)
-        raise e
+        zenml_help = pydantic_model(zenml_data=pydantic_zenml_help)
+
+        try:
+            uri = run(pipeline="train", zenml_help=zenml_help)
+            error = str(uri)
+        except Exception as e:
+            logging.exception(msg="an error occured")
+            error = str(e)
+            raise e
 
     return HttpResponse(error)
 
 
 def zenml_query(pk):
-
     model = get_object_or_404(saved_models, pk=pk)
 
     model: saved_models
+
     parameters = {
         "model_name": model.model_name,
         "model_class": model.model_class,
@@ -657,13 +645,12 @@ def zenml_query(pk):
         "dropped_columns": model.dropped_cols,
         "transformations": model.transformations,
         "outliers": model.outliers,
-        # For local dev: 
-        # "file_trained_on": model.file_trained_on.file.path,
         "file_trained_on": model.file_trained_on.file.name,
         "random_state": model.random_state,
     }
+    model_pickle = model.pickle_file
 
-    return parameters
+    return parameters, model_pickle
 
 
 def zenml_logged_list(request: HttpRequest):
@@ -729,14 +716,26 @@ def get_logged_models_list():
     client = Client()
     experiment_tracker: MLFlowExperimentTracker
     experiment_tracker = client.active_stack.experiment_tracker
-
-    # Get the MLflow tracking URI
-    # tracking_uri = experiment_tracker.get_tracking_uri()
-    # print(tracking_uri)
-    mlflow.set_tracking_uri(os.environ.get("POSTGRES_LOCALHOSTPORT"))
-
+    # mlflow_host = os.environ.get("MLFLOW_HOST", "mlflow_service")
+    logging.warning(experiment_tracker.get_tracking_uri())
     # Get experiment by name or ID
-    experiment_name = "train_pipeline"
+    if os.environ.get("LOCAL_DEV_CLOUD") in ["DEV", "CLOUD"]:
+        experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME")
+
+    else:
+        # mlflow_client = MlflowClient()
+        # if mlflow.active_run():
+        #     id = mlflow.active_run().info.experiment_id
+        #     logging.warning(id)
+        #     logging.warning(mlflow_client.get_experiment(id))
+        # logging.warning(f"experiment tracker: {experiment_tracker.get_tracking_uri()}")
+        mlflow.set_tracking_uri(os.environ.get("POSTGRES_LOCALHOSTPORT"))
+        # mlflow.set_tracking_uri(experiment_tracker.get_tracking_uri())
+        # logging.warning(f"MLflow registry: {mlflow.get_registry_uri()}")
+        # # logging.warning(mlflow.get_artifact_uri())
+        # logging.warning(f"mlflow tracking: {mlflow.get_tracking_uri()}")
+        experiment_name = "train_pipeline"
+
     experiment = mlflow.get_experiment_by_name(experiment_name)
 
     if experiment:
@@ -963,7 +962,6 @@ def zenml_deploy_list(request: HttpRequest):
         client = Client()
         model_registry: MLFlowModelRegistry
         model_registry = client.active_stack.model_registry
-  
 
         deployments = client.list_deployments()
 
@@ -1048,7 +1046,6 @@ def invoke_deployment(request: HttpRequest):
         axis=1,
     )
 
-
     predictions = []
 
     for index, row in pred_df.iterrows():
@@ -1070,8 +1067,6 @@ def invoke_deployment(request: HttpRequest):
             temp_file.write(chunk)
 
         temp_file.flush()
-
-
 
     return HttpResponse
 
@@ -1108,9 +1103,7 @@ def batch_inference(request: HttpRequest):
     ) as temp_file:
         pred_df.to_csv(temp_file.name, index=False)
 
-        run(pipeline = 'batch',
-            zenml_help=zenml_help,
-            file_path=temp_file.name)
+        run(pipeline="batch", zenml_help=zenml_help, file_path=temp_file.name)
 
     return HttpResponse
 

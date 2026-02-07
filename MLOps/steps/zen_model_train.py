@@ -11,9 +11,10 @@ from sklearn.svm import LinearSVC, LinearSVR, SVR, SVC
 from sklearn.linear_model import LassoCV, ElasticNetCV, Ridge, SGDRegressor, SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
+from zenml.experiment_trackers.base_experiment_tracker import BaseExperimentTracker
 # from zenml.integrations.mlflow.experiment_trackers.mlflow_experiment_tracker import MLFlowExperimentTracker
-
-experiment_tracker = Client().active_stack.experiment_tracker
+client = Client()
+experiment_tracker = client.active_stack.experiment_tracker
 
 regressor_dict = {
     "Lasso": LassoCV,
