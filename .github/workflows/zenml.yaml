@@ -1,4 +1,4 @@
-name: Build and push to ECR
+name: Build and push ZENML image to ECR
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  django-build-and-push:
+  zenml-build-and-push:
     runs-on: ubuntu-latest
     
     steps:
@@ -65,4 +65,3 @@ jobs:
             echo "**Image:** \`${{ steps.build-image.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
             echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
             echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
- 
