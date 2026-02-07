@@ -17,3 +17,53 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+        - name: Checkout code
+          uses: actions/checkout@v6
+        
+        - name: Configure AWS creds using OIDC
+          uses: aws-actions/configure-aws-credentials@v6
+          with:
+            role-to-assume: ${{vars.AWS_ROLE_ARN}}
+            aws-region: ${{vars.AWS_REGION}}
+            role-session-name: GitHubActions-ECR-Push
+        
+        - name: Login to AWS ECR
+          id: login-ecr
+          uses: aws-actions/amazon-ecr-login@v2
+
+        - name: Build, tag, and push image to AWS ECR
+          id: build-image
+          env:
+            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+            ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+            IMAGE_TAG: ${{ github.sha }}
+            BRANCH_NAME: ${{ github.ref_name }}
+          run: |
+            # Build image
+            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+            
+            # Push commit SHA tag
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            
+            # Tag and push environment-specific tags
+            if [ "$BRANCH_NAME" == "dev" ]; then
+                docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:dev
+                docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
+                echo "Pushed dev tag"
+            elif [ "$BRANCH_NAME" == "main" ]; then
+                docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:test
+                docker push $ECR_REGISTRY/$ECR_REPOSITORY:test
+                docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:prod
+                docker push $ECR_REGISTRY/$ECR_REPOSITORY:prod
+                echo "Pushed test and prod tags"
+            fi
+            
+            echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT            
+        
+        - name: Image Summary
+          run: |
+            echo "### Image Built and Pushed :rocket:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Image:** \`${{ steps.build-image.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
