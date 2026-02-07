@@ -1,0 +1,19 @@
+name: Build and push to ECR
+
+on:
+  workflow_dispatch:
+    # branches:
+    #   - main
+  # pull_request:
+  #   branches:
+  #     - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
