@@ -1,0 +1,3 @@
+FROM zenmldocker/zenml-server:0.93.0
+
+RUN pip install pymysql cryptography
