@@ -5,9 +5,13 @@ sudo apt install gnome-terminal
 sudo snap install docker
 sudo apt install git -y
 
-git clone https://github.com/reyrey112/MLAPP
+if [ -d "/home/ubuntu/MLAPP" ]; then
+    cd /home/ubuntu/MLAPP && git pull
+else
+    git clone https://github.com/your/repo.git /home/ubuntu/MLAPP
+    cd /home/ubuntu/MLAPP
+fi
 
-cd MLAPP
 
 sudo apt update
 sudo apt install software-properties-common
@@ -15,15 +19,20 @@ sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
 sudo apt install python3.13 python3.13-venv python3.13-dev
 
-python3.13 -m venv venv_MLAPP
+if [ ! -d "venv_MLAPP" ]; then
+    python3.13 -m venv venv_MLAPP
+fi
 source venv_MLAPP/bin/activate
 pip install uv
+
 sudo apt update && sudo apt install -y --no-install-recommends 'build-essential'
 uv pip install -r requirement.txt
 
-mkdir -p ~/.aws 
-echo "[default]
+mkdir -p ~/.aws
+if [ ! -f ~/.aws/config ]; then
+    echo "[default]
 region = us-east-2" > ~/.aws/config
+fi
 
 python3.13 download_from_ssm.py
 
@@ -37,9 +46,11 @@ source /home/ubuntu/MLAPP/.env
 set +a
 
 
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout nginx-selfsigned.key -out nginx-selfsigned.crt \
-    -subj "/C=US/ST=New Jersey/L=East Brunswick/O=Insight4Data/OU=ENG/CN=${SERVER_NAME}"
+if [ ! -f "nginx-selfsigned.crt" ] || [ ! -f "nginx-selfsigned.key" ]; then
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout nginx-selfsigned.key -out nginx-selfsigned.crt \
+        -subj "/C=US/ST=New Jersey/L=East Brunswick/O=Insight4Data/OU=ENG/CN=${SERVER_NAME}"
+fi
 
 export SSL_CERTIFICATE=/home/ubuntu/MLAPP/nginx-selfsigned.crt
 export SSL_CERTIFICATE_KEY=/home/ubuntu/MLAPP/nginx-selfsigned.key
