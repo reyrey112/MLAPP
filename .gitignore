@@ -13,7 +13,9 @@ Here's the ultimate Django gitignore#
 /static
 
 #testing
-*.conf
+django.conf
+gunicorn.conf
+nginx_test.conf
 nginx-certs
 
 #zenml
