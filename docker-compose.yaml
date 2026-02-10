@@ -7,7 +7,7 @@ services:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django-mlapp:prod
     environment:
       - DATABASE_URL=postgresql://${DJANGO_POSTGRES_USER}:${DJANGO_POSTGRES_PASSWORD}@mlapp_db:5432/${DJANGO_POSTGRES_DB}
-      - ZENML_STORE_URL=http://zenml_server:8080
+      - ZENML_STORE_URL=http://zenml_server:${ZENML_PORT}
       - ZENML_STORE_USERNAME=${ZENML_STORE_USERNAME}
       - ZENML_STORE_PASSWORD=${ZENML_STORE_PASSWORD}
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
