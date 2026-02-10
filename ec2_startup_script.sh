@@ -55,7 +55,12 @@ fi
 export SSL_CERTIFICATE=/home/ubuntu/MLAPP/nginx-selfsigned.crt
 export SSL_CERTIFICATE_KEY=/home/ubuntu/MLAPP/nginx-selfsigned.key
 
-sudo bash nginx_conf_upload.sh
+
+envsubst '${DJANGO_PORT} ${MLFLOW_PORT} ${ZENML_PORT} ${SERVER_NAME} ${SSL_CERTIFICATE} ${SSL_CERTIFICATE_KEY}' \
+    < /home/ubuntu/MLAPP/nginx.conf.template \
+    > /etc/nginx/nginx.conf
+
+nginx -t && systemctl restart nginx
 
 sudo snap install aws-cli --classic
 sudo aws ecr get-login-password --region us-east-2 | sudo docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com
