@@ -1,0 +1,59 @@
+worker_processes 1;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+
+    include mime.types;
+
+    upstream django_cluster {
+        least_conn;
+        server 127.0.0.1:${DJANGO_PORT}; #change to EC2 
+    }
+    
+    upstream mlflow_cluster {
+        server 127.0.0.1:${MLFLOW_PORT};
+    }
+
+    upstream zenml_cluster {
+        server 127.0.0.1:${ZENML_PORT};
+    }
+
+    server {
+        listen 443 ssl;
+        server_name ${SERVER_NAME};
+
+        ssl_certificate ${SSL_CERTIFICATE};
+        ssl_certificate_key ${SSL_CERTIFICATE_KEY};
+
+        location / {
+            proxy_pass http://django_cluster;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location /mlflow {
+            proxy_pass http://mlflow_cluster;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location /zen {
+            proxy_pass http://zenml_cluster;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }        
+
+    }
+
+    server {
+        listen 80;
+        server_name ${SERVER_NAME};
+
+        location / {
+            return 301 https://$host$request_uri;
+        }
+    }
+}
