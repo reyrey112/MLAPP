@@ -39,7 +39,11 @@ python3.13 download_from_ssm.py
 sudo apt update
 sudo apt install nginx
 
-echo "SERVER_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)" | sudo tee -a /home/ubuntu/MLAPP/.env
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
+    -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+echo "SERVER_NAME=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/public-ipv4)" | sudo tee -a /home/ubuntu/MLAPP/.env
 
 set -a
 source /home/ubuntu/MLAPP/.env
