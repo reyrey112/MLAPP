@@ -16,8 +16,7 @@ def download_from_ssm(prefix, output_file):
 
     with open(output_file, "w") as f:
         for key, value in variables.items():
-            f.write(f"{key}={value}\n")
-
+            f.write(f'{key}="{value}"\n')
     os.chmod(output_file, 0o600)  # restrict file permissions
     print(f"Written {len(variables)} variables to {output_file}")
 
