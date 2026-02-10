@@ -15,7 +15,7 @@ fi
 
 sudo apt update
 sudo apt install software-properties-common
-sudo add-apt-repository ppa:deadsnakes/ppa
+sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt update
 sudo apt install python3.13 python3.13-venv python3.13-dev
 
@@ -26,7 +26,7 @@ source venv_MLAPP/bin/activate
 pip install uv
 
 sudo apt update && sudo apt install -y --no-install-recommends 'build-essential'
-uv pip install -r requirement.txt
+uv pip install -r requirements.txt
 
 mkdir -p ~/.aws
 if [ ! -f ~/.aws/config ]; then
