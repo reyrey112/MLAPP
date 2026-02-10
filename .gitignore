@@ -12,7 +12,9 @@ Here's the ultimate Django gitignore#
 /user_files
 /static
 
-
+#testing
+*.conf
+nginx-certs
 
 #zenml
 .zen

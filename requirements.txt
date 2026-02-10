@@ -167,6 +167,7 @@ typing_extensions==4.15.0
 tzdata==2025.3
 urllib3==1.26.20
 uvicorn==0.40.0
+uvicorn-worker==0.4.0
 uvloop==0.22.1
 watchfiles==1.1.1
 wcwidth==0.2.14
