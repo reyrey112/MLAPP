@@ -1,9 +1,10 @@
 services:
 
   django-mlapp:
-    build: 
-      context: .
-      dockerfile: ./django_dockerfile
+    # build: 
+    #   context: .
+    #   dockerfile: ./django_dockerfile
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django-mlapp:prod
     environment:
       - DATABASE_URL=postgresql://${DJANGO_POSTGRES_USER}:${DJANGO_POSTGRES_PASSWORD}@mlapp_db:5432/${DJANGO_POSTGRES_DB}
       - ZENML_STORE_URL=http://zenml_server:8080
@@ -29,7 +30,7 @@ services:
       #   condition: service_healthy
 
   mlapp_db:
-    image: postgres:16.11
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django1611:latest
     ports:
       - 5429:5432
     environment:
@@ -45,9 +46,7 @@ services:
       retries: 5
 
   zenml_server:
-    build:
-      context: .
-      dockerfile: ./zenml_dockerfile
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/zenml-mlapp:prod
     ports:
       - ${ZENML_PORT}:8080
     environment:
@@ -65,7 +64,7 @@ services:
     
 
   zenml_db:
-    image: mysql:8.0
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mysql80:latest
     ports:
       - ${ZENML_DB_PORT}:3306
     environment:
@@ -82,7 +81,7 @@ services:
       retries: 5
 
   mlflow_service:
-    image: python:3.13-slim
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mlflow-mlapp:latest
     ports: 
       - ${MLFLOW_PORT}:5000
     environment:
@@ -97,7 +96,7 @@ services:
     # restart: unless-stopped
 
   mlflow_db:
-    image: postgres:16.11
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django1611:latest
     ports:
       - ${MLFLOW_DB_PORT}:5432
     environment:
