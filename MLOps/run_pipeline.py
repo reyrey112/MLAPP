@@ -18,15 +18,12 @@ from zenml import Model
 
 # mlflow.set_tracking_uri("postgresql://user:password@localhost:5431/mlflowdb")
 
-experiment_tracker = Client().active_stack.experiment_tracker
 
 
 def run(
     pipeline: str, zenml_help: pydantic_model = None, deployment_name: str = "None", file_path : str = 'none'
 ):
-
-    uri = experiment_tracker.get_tracking_uri()
-    logging.warning(uri)
+    uri = ""
     if pipeline == "train":
         train_pipe = train_pipeline.with_options(
             run_name=f"{zenml_help.zenml_data.model_name} {zenml_help.zenml_data.model_class} {datetime.datetime.now().replace(microsecond=0)}"

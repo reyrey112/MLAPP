@@ -32,11 +32,18 @@ LOGIN_URL = "/login/"
 LOGOUT_REDIRECT_URL = "/home/"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(default=os.environ.get("DATABASE_URL"))
+    }
 
-DATABASES = {
-    "default": dj_database_url.config(default=os.environ.get("DATABASE_URL"))
-}
-
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
@@ -58,12 +65,7 @@ STORAGES = {
 }
 
     # STATIC_ROOT = BASE_DIR / "static"
-    # DATABASES = {
-    #     "default": {
-    #         "ENGINE": "django.db.backends.sqlite3",
-    #         "NAME": BASE_DIR / "db.sqlite3",
-    #     }
-    # }
+
 
 
 # COMMENT FOR CLOUD
@@ -92,6 +94,7 @@ INSTALLED_APPS = [
     "processing",
     "rest_framework.authtoken",
     "storages",
+    "pgtrigger",
 ]
 
 MIDDLEWARE = [
@@ -103,6 +106,15 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Session settings for guest users
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # or 'cache', 'cached_db'
+# SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+# SESSION_SAVE_EVERY_REQUEST = False  # Set to True if you want to extend session on every request
+# SESSION_COOKIE_NAME = 'sessionid'
+# SESSION_COOKIE_HTTPONLY = True
+# SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+
 
 ROOT_URLCONF = "MLapp.urls"
 
@@ -130,6 +142,7 @@ WSGI_APPLICATION = "MLapp.wsgi.application"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
