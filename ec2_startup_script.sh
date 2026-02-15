@@ -71,4 +71,4 @@ sudo aws ecr get-login-password --region us-east-2 | sudo docker login --usernam
 
 sudo docker-compose pull
 
-sudo docker-compose up -d
+sudo docker-compose -f ~/MLAPP/docker-compose.yaml up -d
