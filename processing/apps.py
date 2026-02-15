@@ -17,25 +17,24 @@ class ProcessingConfig(AppConfig):
         from zenml.enums import StackComponentType
         from zenml.exceptions import CredentialsNotValid
 
+        print("initializing zenml client")
         client = Client()
 
         try:
-
+            print("checking if active stack exists")
             client.active_stack
 
         except (
             CredentialsNotValid
         ) as e:  # need to make something to make an acconut for user
-            print("Creating Default Setup")
+            print("Active stack doesn't exist, looking for guest stack")
             # logging.debug(f"{e}")
 
-        if client.active_stack.experiment_tracker is None:
-            print("No experiment tracker, looking for guest stack")
-
             try:
-
                 stack = client.get_stack(name_id_or_prefix="guest_stack")
-
+                if client.active_stack.experiment_tracker is None:
+                    print("no experiment tracker found, creating new guest stack")
+                    raise KeyError
             except KeyError as e: #Add try except statment for all of the compoenentns
                 print("no stack found, creating new guest stack")
 
