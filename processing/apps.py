@@ -29,7 +29,6 @@ class ProcessingConfig(AppConfig):
             print("Creating Default Setup")
             # logging.debug(f"{e}")
 
-        if client.active_stack.experiment_tracker is None:
             print("No experiment tracker, looking for guest stack")
 
             try:
