@@ -22,6 +22,7 @@ from zenml.deployers.docker.docker_deployer import DockerDeployer
 import requests
 import tempfile
 import csv
+from django.contrib import messages
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -32,7 +33,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 import logging
 import os, io, uuid
-
+from django.contrib.auth import get_user_model, login
 from zenml_helper import zenml_parse, pydantic_model
 from MLOps.run_pipeline import run
 
@@ -41,74 +42,112 @@ import json
 from dotenv import load_dotenv
 import os
 
+User = get_user_model()
 
 load_dotenv()
 
-# from ..MLOps.run_pipeline import
 
-# import seaborn as sns
+def register_as_guest(request: HttpRequest):
+    if request.method == "GET":
+        if request.user.is_anonymous:
+            try:
+                username = f"guest_{uuid.uuid4().hex[:12]}"
+                guest_user = User.objects.create_user(username=username)
+                guest_user.set_unusable_password()
+                guest_user.profile.is_guest = True
+                guest_user.save()
 
-# data = pd.read_csv(r"C:\Users\reyde\Desktop\Formulations.csv")
+                # Get or create profile (in case signal didn't fire)
+                # profile, created = UserProfile.objects.get_or_create(user=guest_user)
+                # profile.is_guest = True
+                # profile.save()
 
+                # Log in the guest user
+                login(request, guest_user)
+                request.session["guest_user_id"] = guest_user.id
 
-# plot = sns.histplot(data=data, y="Viscosity")
-
-
-# Create your views here.
+                # Redirect to next or home
+                next_url = request.GET.get("next", "home")
+                return redirect(next_url)
+                
+            except Exception as e:
+                messages.error(request, f"Error creating guest account: {str(e)}")
+                return redirect("login")
+    
+    return redirect("login")
 
 
 def generate_guest_id():
     return str(uuid.uuid4())
 
 
-def create_user(request: HttpRequest):
+def logon(request: HttpRequest):
+    if request.user.is_authenticated:
+        return redirect("/home/")
+    return render(request, "login.html")
+
+
+def create_user(request):
     if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect(
-                "/login/"
-            )  # Redirect to a login page or another appropriate page
+            user = form.save()
+            
+            # Profile should be created automatically by signal
+            # But we can verify and set is_guest to False
+            user.profile.is_guest = False
+            user.profile.save()
+            
+            # Log the user in
+            login(request, user)
+            
+            messages.success(request, f'Account created successfully!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = UserCreationForm()
+    
     return render(request, "register.html", {"form": form})
 
 
 def redirect_home(request: HttpRequest):
-    return redirect("/home/")
+    return redirect("/login/")
 
 
 def redirect_end(request: HttpRequest, **kwargs):
     return render(request, "redirect.html", context=kwargs)
 
 
+@login_required
 def home(request: HttpRequest):
-    if request.user.is_authenticated:
-        return render(request, "home.html")
-    elif "guest_id" in request.session:
-        return render(request, "home.html")
-    else:
-        request.session["guest_id"] = generate_guest_id()
-        return render(request, "home.html")
+    # if request.user.is_authenticated:
 
+    if hasattr(request.user, 'profile') and request.user.profile.is_guest:
+        print("hello")
 
+    return render(request, "home.html")
+    # elif "guest_id" in request.session:
+    #     return render(request, "home.html")
+    # else:
+    #     request.session["guest_id"] = generate_guest_id()
+    #     return render(request, "home.html")
+
+@login_required
 def zenml_home(request: HttpRequest):
     return render(request, "zenml_home.html")
 
-
+@login_required
 def file_upload(request: HttpRequest):
     return render(request, "file_upload.html")
 
-
+@login_required
 def load_file(request: HttpRequest):
 
     try:
         file_list = get_list_or_404(
             upload_file,
-            user=request.user if request.user.is_authenticated else None,
-            guest=(
-                None if request.user.is_authenticated else request.session["guest_id"]
-            ),
+            user=request.user,
         )
 
     except Http404 as e:
@@ -139,7 +178,7 @@ def load_file(request: HttpRequest):
 
     return render(request, "load_file.html", context)
 
-
+@login_required
 def show_table(request: HttpRequest):
     if request.method == "POST":
         if "file" in request.FILES:
@@ -150,12 +189,7 @@ def show_table(request: HttpRequest):
                 # Save to database
                 saved_file = upload_file.objects.create(
                     file=user_file,
-                    user=request.user if request.user.is_authenticated else None,
-                    guest=(
-                        None
-                        if request.user.is_authenticated
-                        else request.session["guest_id"]
-                    ),
+                    user=request.user
                 )
 
                 request.session["dk"] = saved_file.pk
@@ -230,7 +264,7 @@ def show_table(request: HttpRequest):
 
         return redirect("/redirect/", pk="pk")
 
-
+@login_required
 def x_variable_selection(request: HttpRequest):
     if request.method == "GET":
         df = pd.read_csv(
@@ -244,7 +278,7 @@ def x_variable_selection(request: HttpRequest):
     else:
         return redirect("/redirect/", pk="pk")
 
-
+@login_required
 def y_variable_selection(request: HttpRequest):
     if request.method == "POST":
         df = pd.read_csv(
@@ -263,7 +297,7 @@ def y_variable_selection(request: HttpRequest):
     else:
         return redirect("/redirect/", POST="POST")
 
-
+@login_required
 def model_selection(request: HttpRequest):
     if request.method == "POST":
         df = pd.read_csv(
@@ -292,7 +326,7 @@ def model_selection(request: HttpRequest):
     else:
         return redirect("/redirect/", POST="POST")
 
-
+@login_required
 def scaler_selection(request: HttpRequest):
     if request.method == "POST":
         file = get_object_or_404(upload_file, pk=request.session["dk"])
@@ -320,7 +354,7 @@ def scaler_selection(request: HttpRequest):
     else:
         return render(request, "redirect.html")
 
-
+@login_required
 def train_model(request: HttpRequest):
     if request.method == "POST":
         models = model_predicting()
@@ -360,10 +394,7 @@ def train_model(request: HttpRequest):
             outliers=outliers,
             file_trained_on=file,
             pickle_file=trained_model,
-            user=request.user if request.user.is_authenticated else None,
-            guest=(
-                None if request.user.is_authenticated else request.session["guest_id"]
-            ),
+            user=request.user 
         )
 
         # request.session["model_name"]
@@ -376,15 +407,12 @@ def train_model(request: HttpRequest):
     else:
         return redirect("/redirect/", POST="POST")
 
-
+@login_required
 def graph_model_list(request: HttpRequest):
     try:
         model_list = get_list_or_404(
             saved_models,
-            user=request.user if request.user.is_authenticated else None,
-            guest=(
-                None if request.user.is_authenticated else request.session["guest_id"]
-            ),
+            user=request.user
         )
     except Http404 as e:
         return render(request, "graph_model_list.html")
@@ -431,7 +459,7 @@ def graph_model_list(request: HttpRequest):
 
     return render(request, "graph_model_list.html", context)
 
-
+@login_required
 def graph_accuracy(request: HttpRequest):
 
     model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
@@ -500,7 +528,6 @@ def graph_accuracy(request: HttpRequest):
     plt.close()
     return render(request, "accuracy_graph.html", context)
 
-
 def accuracy_query(pks):
     model_list = []
     data_df = pd.DataFrame(
@@ -530,7 +557,7 @@ def accuracy_query(pks):
 
     return data_df
 
-
+@login_required
 def graph_confusion(request: HttpRequest):
     models = model_predicting()
     model_indexes = request.POST["selected_models"]
@@ -544,7 +571,6 @@ def graph_confusion(request: HttpRequest):
     context = {"table": table_html}
 
     return render(request, "show_table.html", context)
-
 
 def confusion_query(models: model_predicting, model_indexes):
     model = get_object_or_404(saved_models, pk=int(model_indexes) + 1)
@@ -566,15 +592,12 @@ def confusion_query(models: model_predicting, model_indexes):
 
     return y, model.y_predictions, model.random_state, model.model_name
 
-
+@login_required
 def zenml_model_list(request: HttpRequest):
     try:
         model_list = get_list_or_404(
             saved_models,
-            user=request.user if request.user.is_authenticated else None,
-            guest=(
-                None if request.user.is_authenticated else request.session["guest_id"]
-            ),
+            user=request.user
         )
     except Http404 as e:
         return render(request, "graph_model_list.html")
@@ -621,7 +644,7 @@ def zenml_model_list(request: HttpRequest):
 
     return render(request, "zenml_model_list.html", context)
 
-
+@login_required
 def zenml_train_pipeline(request: HttpRequest):
     # send all parameters to class for zenml to use
     # make it so you can choose parametrs from models stored in django databse to zenml
@@ -644,7 +667,6 @@ def zenml_train_pipeline(request: HttpRequest):
 
     return HttpResponse(error)
 
-
 def zenml_query(pk):
 
     model = get_object_or_404(saved_models, pk=pk)
@@ -657,7 +679,7 @@ def zenml_query(pk):
         "dropped_columns": model.dropped_cols,
         "transformations": model.transformations,
         "outliers": model.outliers,
-        # For local dev: 
+        # For local dev:
         # "file_trained_on": model.file_trained_on.file.path,
         "file_trained_on": model.file_trained_on.file.name,
         "random_state": model.random_state,
@@ -665,7 +687,7 @@ def zenml_query(pk):
 
     return parameters
 
-
+@login_required
 def zenml_logged_list(request: HttpRequest):
     if "update" in request.GET:
         if request.GET["update"] == "true":
@@ -718,7 +740,7 @@ def zenml_logged_list(request: HttpRequest):
 
     return render(request, "zenml_logged_model_list.html", context)
 
-
+@login_required
 def get_logged_models_list():
     # Get the active MLflow experiment tracker from ZenML
     viewing_df = pd.DataFrame()
@@ -774,7 +796,7 @@ def get_logged_models_list():
     else:
         return None, None, None
 
-
+@login_required
 def zenml_register_pipeline(request: HttpRequest):
     model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
 
@@ -812,7 +834,7 @@ def zenml_register_pipeline(request: HttpRequest):
 
     return HttpResponse()
 
-
+@login_required
 def zenml_register_list(request: HttpRequest):
     from zenml.client import Client
 
@@ -842,7 +864,6 @@ def zenml_register_list(request: HttpRequest):
     context = {"table": table_html}
 
     return render(request, "zenml_registered_model_list.html", context)
-
 
 def get_registered_models_list():
     client = Client()
@@ -887,7 +908,7 @@ def get_registered_models_list():
 
     return viewing_df, model_names, zenml_run_names
 
-
+@login_required
 def zenml_deploy_pipeline(request: HttpRequest):
 
     model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
@@ -925,7 +946,7 @@ def zenml_deploy_pipeline(request: HttpRequest):
 
     return HttpResponse()
 
-
+@login_required
 def zenml_deploy_list(request: HttpRequest):
 
     if request.method == "POST":
@@ -963,7 +984,6 @@ def zenml_deploy_list(request: HttpRequest):
         client = Client()
         model_registry: MLFlowModelRegistry
         model_registry = client.active_stack.model_registry
-  
 
         deployments = client.list_deployments()
 
@@ -1015,7 +1035,7 @@ def zenml_deploy_list(request: HttpRequest):
 
         return render(request, "zenml_deployed_model_list.html", context)
 
-
+@login_required
 def upload_prediction_csv(request: HttpRequest):
     model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
     deployment_names = request.session["deployment_names"]
@@ -1031,7 +1051,7 @@ def upload_prediction_csv(request: HttpRequest):
 
     return render(request, "zenml_prediction_csv_upload.html")
 
-
+@login_required
 def invoke_deployment(request: HttpRequest):
     deployment_url = request.session["deployment_url"]
     invoke_url = f"{deployment_url}/invoke"
@@ -1047,7 +1067,6 @@ def invoke_deployment(request: HttpRequest):
         ],
         axis=1,
     )
-
 
     predictions = []
 
@@ -1071,11 +1090,9 @@ def invoke_deployment(request: HttpRequest):
 
         temp_file.flush()
 
-
-
     return HttpResponse
 
-
+@login_required
 def upload_batch_csv(request: HttpRequest):
     model_indexes = [int(index) for index in request.POST.getlist("selected_models")]
     zenml_run_names = request.session["zenml_run_names"]
@@ -1084,7 +1101,7 @@ def upload_batch_csv(request: HttpRequest):
 
     return render(request, "zenml_inference_csv_upload.html")
 
-
+@login_required
 def batch_inference(request: HttpRequest):
     user_file = request.FILES["file"]
     pred_df = pd.read_csv(user_file)
@@ -1108,9 +1125,7 @@ def batch_inference(request: HttpRequest):
     ) as temp_file:
         pred_df.to_csv(temp_file.name, index=False)
 
-        run(pipeline = 'batch',
-            zenml_help=zenml_help,
-            file_path=temp_file.name)
+        run(pipeline="batch", zenml_help=zenml_help, file_path=temp_file.name)
 
     return HttpResponse
 

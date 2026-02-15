@@ -6,6 +6,9 @@ from django.contrib.auth import views as auth_views
 
 
 urlpatterns = [
+    path("guest/", views.register_as_guest, name="guest"),
+    path("register/", views.create_user, name="register"),
+    # path("login/", views.logon, name="login"),
     path("redirect/", views.redirect_end, name="redirect"),
     path("", views.redirect_home, name=""),
     path("home/", views.home, name="home"),
