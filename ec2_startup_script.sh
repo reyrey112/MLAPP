@@ -8,7 +8,7 @@ sudo apt install git -y
 if [ -d "/home/ubuntu/MLAPP" ]; then
     cd /home/ubuntu/MLAPP && git pull
 else
-    git clone https://github.com/your/repo.git /home/ubuntu/MLAPP
+    git clone https://github.com/reyrey112/MLAPP /home/ubuntu/MLAPP
     cd /home/ubuntu/MLAPP
 fi
 
@@ -71,4 +71,4 @@ sudo aws ecr get-login-password --region us-east-2 | sudo docker login --usernam
 
 sudo docker-compose pull
 
-sudo docker-compose -f ~/MLAPP/docker-compose.yaml up -d
+sudo docker-compose -f home/ubuntu/MLAPP/docker-compose.yaml up -d
