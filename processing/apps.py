@@ -1,6 +1,11 @@
 from django.apps import AppConfig
 import logging
+from dotenv import load_dotenv
 import os
+
+
+load_dotenv()
+
 
 
 class ProcessingConfig(AppConfig):
@@ -74,7 +79,7 @@ class ProcessingConfig(AppConfig):
             )
         except EntityExistsError as e:
             print("experiment tracker exists, continuing")
-            
+
         try:
             client.create_stack_component(
                 name="guest_artifact_store",
