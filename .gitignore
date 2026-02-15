@@ -9,6 +9,7 @@ Here's the ultimate Django gitignore#
 
 # My Files for custom Django Project # 
 *.png
+/tmp
 /user_files
 /static
 
@@ -17,6 +18,7 @@ django.conf
 gunicorn.conf
 nginx_test.conf
 nginx-certs
+prod.env
 
 #zenml
 .zen
