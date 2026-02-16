@@ -40,12 +40,19 @@ http {
             proxy_pass http://mlflow_cluster;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+
         }
 
         location /zen {
             proxy_pass http://zenml_cluster;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
         }        
 
     }
