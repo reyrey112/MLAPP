@@ -90,7 +90,7 @@ services:
       retries: 10
       start_period: 10s
 
-  mlflow_service:
+  mlflow_server:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mlflow-mlapp:latest
     ports: 
       - ${MLFLOW_PORT}:5000

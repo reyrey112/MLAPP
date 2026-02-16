@@ -36,7 +36,8 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
         }
 
-        location /mlflow {
+        location /mlflow/ {
+            rewrite ^/mlflow/(.*) /$1 break;
             proxy_pass http://mlflow_cluster;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -46,7 +47,8 @@ http {
 
         }
 
-        location /zen {
+        location /zen/ {
+            rewrite ^/zen/(.*) /$1 break;
             proxy_pass http://zenml_cluster;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
