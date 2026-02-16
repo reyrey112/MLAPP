@@ -97,6 +97,7 @@ services:
     environment:
       - MLFLOW_FLASK_SERVER_SECRET_KEY='password'
       - MLFLOW_HOST=${SERVER_NAME}
+      - MLFLOW_TRACKING_ALLOWED_HOSTS=${SERVER_NAME}
       # - MLFLOW_TRACKING_INSECURE_TLS=true
     volumes:
       - mlflow-artifacts:/mlartifacts
