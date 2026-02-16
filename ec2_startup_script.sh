@@ -70,5 +70,5 @@ sudo snap install aws-cli --classic
 sudo aws ecr get-login-password --region us-east-2 | sudo docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com
 
 sudo docker-compose pull
-
+sudo docker image prune --force
 sudo docker-compose -f docker-compose.yaml up -d
