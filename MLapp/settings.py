@@ -24,8 +24,13 @@ import os
 
 load_dotenv()
 
+print("Prinit env varibales")
+
 MEDIA_ROOT = BASE_DIR / f"{os.environ.get("MEDIA_URL")}"
 MEDIA_URL = f"/{os.environ.get("MEDIA_URL")}/"
+
+print(f"printing buket name {os.environ.get("MEDIA_URL")}")
+
 
 LOGIN_REDIRECT_URL = "/home/"
 LOGIN_URL = "/login/"
@@ -44,8 +49,16 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+
+print(f"printing buket name {os.environ.get("DATABASE_URL")}")
+
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+print(f"printing buket name {os.environ.get("AWS_ACCESS_KEY_ID")}")
+print(f"printing buket name {os.environ.get("AWS_SECRET_ACCESS_KEY")}")
+
+
 print("getting bucket NAME")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
 print(f"printing buket name {os.environ.get("AWS_STORAGE_BUCKET_NAME")}")
