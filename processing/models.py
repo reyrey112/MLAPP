@@ -6,29 +6,6 @@ from cryptography.fernet import Fernet
 import pgtrigger
 from django.contrib.auth.models import AbstractUser
 
-classes = [name for name, obj in inspect.getmembers(linear_model, inspect.isclass)]
-
-
-# Create your models here.
-
-
-# class User_Credentials(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE)
-#     username = models.CharField(max_length=100)
-#     password = models.TextField()  # Encrypted
-#     encryption_key = models.TextField()
-
-#     def set_encrypted_field(self, field_name: str, value: str):
-#         """Encrypt and store a field"""
-#         f = Fernet(self.encryption_key.encode())
-#         encrypted = f.encrypt(value.encode())
-#         setattr(self, field_name, encrypted.decode())
-
-#     def get_decrypted_field(self, field_name: str) -> str:
-#         """Decrypt and return a field"""
-#         f = Fernet(self.encryption_key.encode())
-#         encrypted = getattr(self, field_name).encode()
-#         return f.decrypt(encrypted).decode()
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
