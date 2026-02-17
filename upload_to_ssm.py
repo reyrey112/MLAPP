@@ -43,7 +43,10 @@ def parse_env_file(filepath):
 
 
 def upload_to_ssm(variables, prefix, sensitive_keys):
-    session = boto3.Session(profile_name="admin")
+    if os.getenv('GITHUB_ACTIONS'):
+        session = boto3.Session()
+    else:
+        session = boto3.Session(profile_name="admin")
 
     client = session.client(
         "ssm",
