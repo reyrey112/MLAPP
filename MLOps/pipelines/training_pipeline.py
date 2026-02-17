@@ -38,18 +38,19 @@ def train_pipeline(zenml_help: pydantic_model):
     :type data_path: str
     """
 
-    df = ingest_df(zenml_help.zenml_data.data_path)
-    x_train, x_test, y_train, y_test = clean_df(
-        df=df,
-        dropped_columns=zenml_help.zenml_data.dropped_columns,
-        y_variable=zenml_help.zenml_data.y_variable,
-        random_state=zenml_help.zenml_data.random_state,
-        scaler=zenml_help.zenml_data.transformations,
-        outliers=zenml_help.zenml_data.outliers,
-    )
-    model = zen_train_model(
-        x_train, x_test, y_train, y_test, zenml_help.zenml_data.model_class
-    )
-    r2_score, rmse = evaluate_model(model, x_test, y_test)
+    # df = ingest_df(zenml_help.zenml_data.data_path)
+    # x_train, x_test, y_train, y_test = clean_df(
+    #     df=df,
+    #     dropped_columns=zenml_help.zenml_data.dropped_columns,
+    #     y_variable=zenml_help.zenml_data.y_variable,
+    #     random_state=zenml_help.zenml_data.random_state,
+    #     scaler=zenml_help.zenml_data.transformations,
+    #     outliers=zenml_help.zenml_data.outliers,
+    # )
+    # model = zen_train_model(
+    #     x_train, x_test, y_train, y_test, zenml_help.zenml_data.model_class
+    # )
+    model = log_model(zenml_help.zenml_data.model_path)
+    # r2_score, rmse = evaluate_model(model, x_test, y_test)
 
 
