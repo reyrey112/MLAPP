@@ -7,8 +7,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://${DJANGO_POSTGRES_USER}:${DJANGO_POSTGRES_PASSWORD}@mlapp_db:5432/${DJANGO_POSTGRES_DB}
       - ZENML_STORE_URL=http://zenml_server:${ZENML_PORT}
-      # - ZENML_STORE_USERNAME=${ZENML_STORE_USERNAME}
-      # - ZENML_STORE_PASSWORD=${ZENML_STORE_PASSWORD}
+      - ZENML_STORE_USERNAME=${ZENML_STORE_USERNAME}
+      - ZENML_STORE_PASSWORD=${ZENML_STORE_PASSWORD}
       - ZENML_DEFAULT_USER_NAME=${ZENML_DEFAULT_USER_NAME}
       - ZENML_DEFAULT_USER_PASSWORD=${ZENML_DEFAULT_USER_PASSWORD}
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
@@ -16,6 +16,9 @@ services:
       - MLFLOW_FLASK_SERVER_SECRET_KEY='password'
       - MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME}
       - SECRET_KEY=${SECRET_KEY}
+      - MEDIA_URL=${MEDIA_URL}
+      - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
+      - SERVER_NAME=${SERVER_NAME}
       # - MLFLOW_TRACKING_INSECURE_TLS=true
 
     ports:
@@ -55,6 +58,8 @@ services:
       - ${ZENML_PORT}:8080
     environment:
       - ZENML_SERVER_AUTO_ACTIVATE=1
+      - ZENML_SERVER_HOST=${SERVER_NAME}
+      - ZENML_SERVER_ALLOWED_ORIGINS=https://${SERVER_NAME}
       - ZENML_DEFAULT_USER_NAME=${ZENML_DEFAULT_USER_NAME}
       - ZENML_DEFAULT_USER_PASSWORD=${ZENML_DEFAULT_USER_PASSWORD}    
       - ZENML_STORE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@zenml_db:3306/${MYSQL_DATABASE}
@@ -88,17 +93,19 @@ services:
       retries: 10
       start_period: 10s
 
-  mlflow_service:
+  mlflow_server:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mlflow-mlapp:latest
     ports: 
       - ${MLFLOW_PORT}:5000
     environment:
       - MLFLOW_FLASK_SERVER_SECRET_KEY='password'
+      # - MLFLOW_HOST=${SERVER_NAME}
+      # - MLFLOW_TRACKING_ALLOWED_HOSTS=${SERVER_NAME}
       # - MLFLOW_TRACKING_INSECURE_TLS=true
     volumes:
       - mlflow-artifacts:/mlartifacts
     command: >
-      bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
+      bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --cors-allowed-origins "https://${SERVER_NAME}" --allowed-hosts "${SERVER_NAME}" --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
     depends_on:
       mlflow_db:
         condition: service_healthy
