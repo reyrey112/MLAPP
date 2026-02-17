@@ -1,0 +1,42 @@
+name: Upload Environment Variables to AWS SSM
+
+on:
+  workflow_dispatch:
+    # inputs:
+    #   environment:
+    #     description: 'Environment to deploy to'
+    #     required: true
+    #     type: choice
+    #     options:
+    #       - prod
+    #       - staging
+    #       - dev
+
+jobs:
+  upload-to-ssm:
+    runs-on: ubuntu-latest
+    # environment: ${ github.event.inputs.environment }  # Use GitHub Environments for protection
+    
+    permissions:
+      id-token: write  # Required for OIDC
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        run: |
+          pip install boto3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+            role-to-assume: ${{vars.AWS_ROLE_ARN}}
+            aws-region: ${{vars.AWS_REGION}}
+            role-session-name: GHA-Upload-ENV-to-SSM-${{ github.run_id }}
