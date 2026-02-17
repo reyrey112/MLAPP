@@ -3,6 +3,7 @@ from MLOps.steps.zen_ingest_data import ingest_df
 from MLOps.steps.zen_clean_data import clean_df
 from MLOps.steps.zen_model_train import zen_train_model
 from MLOps.steps.zen_evaluate_model import evaluate_model
+from MLOps.steps.zen_log_model import log_model
 from zenml_helper import zenml_parse, pydantic_model
 from MLOps.steps.zen_config import ModelNameConfig
 from zenml.config import DockerSettings
