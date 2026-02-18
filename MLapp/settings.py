@@ -86,7 +86,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [f"{os.environ.get("SERVER_NAME")}"]
+ALLOWED_HOSTS = [f"{os.environ.get("SERVER_NAME")}", "localhost"]
 
 
 # Application definition

@@ -89,6 +89,15 @@ class ProcessingConfig(AppConfig):
             )
         except EntityExistsError as e:
             print("artifact store exists, continuing")
+        try:
+            client.create_stack_component(
+                name="guest_orc",
+                flavor="local",
+                component_type=StackComponentType.ORCHESTRATOR,
+                configuration={}
+            )
+        except EntityExistsError as e:
+            print("orc already exists, continuing")
 
         try:
             client.create_stack(

@@ -18,7 +18,7 @@ django.conf
 gunicorn.conf
 nginx_test.conf
 nginx-certs
-prod.env
+local.env
 
 #zenml
 .zen
