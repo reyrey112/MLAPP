@@ -18,7 +18,7 @@ from zenml.integrations.mlflow.model_registries.mlflow_model_registry import (
     MLFlowModelRegistry,
 )
 from mlflow import MlflowClient
-from zenml.deployers.docker.docker_deployer import DockerDeployer
+# from zenml.deployers.docker.docker_deployer import DockerDeployer
 import requests
 import tempfile
 import csv
@@ -224,7 +224,7 @@ def show_table(request: HttpRequest):
 
                 file = get_object_or_404(upload_file, pk=file_pk[0])
 
-                df = pd.read_csv(file.file.path)
+                df = pd.read_csv(file.file)
 
                 request.session["dk"] = file.pk
 
@@ -249,7 +249,7 @@ def show_table(request: HttpRequest):
 
     elif "dk" in request.session:
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file
         )
 
         table_html = df.to_html(
@@ -268,7 +268,7 @@ def show_table(request: HttpRequest):
 def x_variable_selection(request: HttpRequest):
     if request.method == "GET":
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file
         )
 
         context = {"options": df.columns.values}
@@ -282,7 +282,7 @@ def x_variable_selection(request: HttpRequest):
 def y_variable_selection(request: HttpRequest):
     if request.method == "POST":
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file
         )
 
         columns_to_drop = request.POST.getlist("columns")
@@ -301,7 +301,7 @@ def y_variable_selection(request: HttpRequest):
 def model_selection(request: HttpRequest):
     if request.method == "POST":
         df = pd.read_csv(
-            get_object_or_404(upload_file, pk=request.session["dk"]).file.path
+            get_object_or_404(upload_file, pk=request.session["dk"]).file
         )
         y_variable = request.POST["dropdown"]
         request.session["y_variable"] = y_variable
@@ -330,7 +330,7 @@ def model_selection(request: HttpRequest):
 def scaler_selection(request: HttpRequest):
     if request.method == "POST":
         file = get_object_or_404(upload_file, pk=request.session["dk"])
-        df = pd.read_csv(file.file.path)
+        df = pd.read_csv(file.file)
         request.session["model_class"] = request.POST["models"]
         request.session["model_name"] = request.POST["model_name"]
 
@@ -361,7 +361,7 @@ def train_model(request: HttpRequest):
 
         file = get_object_or_404(upload_file, pk=request.session["dk"])
         dropped_cols = request.session["columns_to_drop"]
-        df = pd.read_csv(file.file.path)
+        df = pd.read_csv(file.file)
         df = df.drop(dropped_cols, axis=1)
         y_variable = request.session["y_variable"]
         y_class = request.session["y_class"]
@@ -584,7 +584,7 @@ def confusion_query(models: model_predicting, model_indexes):
     ]
 
     file = get_object_or_404(upload_file, pk=model.file_trained_on)
-    df = pd.read_csv(file.file.path)
+    df = pd.read_csv(file.file)
     y = df[model.y_variable]
 
     if model.outliers is True:
@@ -679,9 +679,8 @@ def zenml_query(pk):
         "dropped_columns": model.dropped_cols,
         "transformations": model.transformations,
         "outliers": model.outliers,
-        # For local dev:
-        # "file_trained_on": model.file_trained_on.file.path,
-        "file_trained_on": model.file_trained_on.file.name,
+
+        # "file_trained_on": model.file_trained_on.file,
         "random_state": model.random_state,
     }
 
