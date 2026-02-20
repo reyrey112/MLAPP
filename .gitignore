@@ -19,6 +19,7 @@ gunicorn.conf
 nginx_test.conf
 nginx-certs
 local.env
+logs
 
 #zenml
 .zen
