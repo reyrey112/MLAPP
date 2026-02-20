@@ -16,7 +16,8 @@ class zenml_parse:
         uri : str = "None",
         run_name : str = "None",
         registered_model_name: str = "None",
-        model_path: str = "None"
+        model_path: str = "None",
+        run_id: str = "None"
     ) -> None:
         self.model_name = model_name
         self.model_class = model_class
@@ -30,6 +31,7 @@ class zenml_parse:
         self.run_name = run_name
         self.registered_model_name = registered_model_name
         self.model_path = model_path
+        self.run_id = run_id
 
     def to_dict(self):
         return {
@@ -44,7 +46,8 @@ class zenml_parse:
             "uri": self.uri,
             "run_name": self.run_name,
             "registered_model_name": self.registered_model_name,
-            "model_path": self.model_path
+            "model_path": self.model_path,
+            "run_id": self.run_id
         }
 
 
@@ -61,7 +64,8 @@ def default_zenml_parse():
         uri = "None",
         run_name= "None",
         registered_model_name= "None",
-        model_path = "None"
+        model_path = "None",
+        run_id="None"
     )
 
 

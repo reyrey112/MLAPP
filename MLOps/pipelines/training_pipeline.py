@@ -51,7 +51,7 @@ def train_pipeline(zenml_help: pydantic_model):
     # model = zen_train_model(
     #     x_train, x_test, y_train, y_test, zenml_help.zenml_data.model_class
     # )
-    model = log_model(zenml_help.zenml_data.model_path)
+    model = log_model(zenml_help.zenml_data.model_path, zenml_help.zenml_data.run_name)
     # r2_score, rmse = evaluate_model(model, x_test, y_test)
 
 
