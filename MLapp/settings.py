@@ -87,7 +87,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = [f"{os.environ.get("SERVER_NAME")}", "localhost"]
-
+CSRF_TRUSTED_ORIGINS = [f"https://{os.environ.get("SERVER_NAME")}"]
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 
@@ -104,7 +106,6 @@ INSTALLED_APPS = [
     "pgtrigger",
 ]
 
-CSRF_TRUSTED_ORIGINS = [f"https://{os.environ.get("SERVER_NAME")}"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
