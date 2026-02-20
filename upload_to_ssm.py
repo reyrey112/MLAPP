@@ -9,6 +9,8 @@ SSM_PREFIX = "/MLAPP/prod"  # change this to your app/environment
 SENSITIVE_KEYS = {
     "SECRET_KEY",
     "AWS_STORAGE_BUCKET_NAME",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
     "DJANGO_POSTGRES_USER",
     "DJANGO_POSTGRES_PASSWORD",
     "DJANGO_POSTGRES_DB",
