@@ -9,7 +9,6 @@ Here's the ultimate Django gitignore#
 
 # My Files for custom Django Project # 
 *.png
-/tmp
 /user_files
 /static
 
