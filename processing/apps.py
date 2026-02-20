@@ -42,18 +42,22 @@ class ProcessingConfig(AppConfig):
         #         raise KeyError
         # except KeyError as e: #Add try except statment for all of the compoenentns
         print("no stack found, creating new guest stack")
-
+        
         mlflow_port = os.environ.get("MLFLOW_PORT")
+        print(f"{mlflow_port}")
         s3_bucket = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+        print(f"{os.environ.get("MLFLOW_TRACKING_USERNAME")}")
+        print(f"{os.environ.get("MLFLOW_TRACKING_PASSWORD")}")
         try:
             client.create_stack_component(
                 name="guest_tracker",
                 flavor="mlflow",
                 component_type=StackComponentType.EXPERIMENT_TRACKER,
                 configuration={
-                    "tracking_uri": f"http://127.0.0.1:{mlflow_port}",
-                    "tracking_username": "guest",
-                    "tracking_password": "Guest1.",
+                    "tracking_uri": f"http://mlflow_server:{mlflow_port}",
+                    "tracking_username": f"{os.environ.get("MLFLOW_TRACKING_USERNAME")}",
+                    "tracking_password": f"{os.environ.get("MLFLOW_TRACKING_PASSWORD")}",
+                    "experiment_name": "Default"
                 },
             )
 
@@ -92,7 +96,7 @@ class ProcessingConfig(AppConfig):
         try:
             client.create_stack_component(
                 name="guest_orc",
-                flavor="local",
+                flavor="local_docker",
                 component_type=StackComponentType.ORCHESTRATOR,
                 configuration={}
             )
