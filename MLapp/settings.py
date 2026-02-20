@@ -104,6 +104,8 @@ INSTALLED_APPS = [
     "pgtrigger",
 ]
 
+CSRF_TRUSTED_ORIGINS = [f"https://{os.environ.get("SERVER_NAME")}"]
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
