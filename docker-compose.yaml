@@ -31,7 +31,7 @@ services:
         condition: service_healthy
       zenml_server:
         condition: service_healthy
-      mlflow_service:
+      mlflow_server:
         condition: service_healthy
 
   mlapp_db:
