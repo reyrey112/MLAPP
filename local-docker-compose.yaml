@@ -13,25 +13,29 @@ services:
       - ZENML_DEFAULT_USER_PASSWORD=${ZENML_DEFAULT_USER_PASSWORD}
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
       - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+      - MLFLOW_TRACKING_URI=http://mlflow_server:${MLFLOW_PORT}
       - MLFLOW_FLASK_SERVER_SECRET_KEY='password'
       - MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME}
       - SECRET_KEY=${SECRET_KEY}
       - MEDIA_URL=${MEDIA_URL}
       - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
-      - MLFLOW_TRACKING_INSECURE_TLS=true
-
+      # - MLFLOW_TRACKING_INSECURE_TLS=true
+    # group_add:
+    #   - "1001"
     ports:
       - "${DJANGO_PORT}:8000"
     volumes:
       - mlapp-user_files:/app/user_files
       - mlapp-.config:/root/.config
+      - /var/run/docker.sock:/var/run/docker.sock  # this must be here
+
     depends_on:
       mlapp_db:
         condition: service_healthy
       zenml_server:
         condition: service_healthy
-      # mlflow_service:
-      #   condition: service_healthy
+      mlflow_server:
+        condition: service_healthy
 
   mlapp_db:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django1611:latest
@@ -69,6 +73,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    restart: unless-stopped
 
     
 
@@ -96,11 +101,19 @@ services:
       - ${MLFLOW_PORT}:5000
     environment:
       - MLFLOW_FLASK_SERVER_SECRET_KEY='password'
-      - MLFLOW_TRACKING_INSECURE_TLS=true
+      # - MLFLOW_TRACKING_INSECURE_TLS=true
+      - MLFLOW_SERVER_DISABLE_SECURITY_MIDDLEWARE=true
+
     volumes:
       - mlflow-artifacts:/mlartifacts
     command: >
       bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       mlflow_db:
         condition: service_healthy
@@ -121,6 +134,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  
 
 volumes:
   mlflow-postgres-data:
@@ -129,4 +143,4 @@ volumes:
   mlapp-user_files:
   mlapp-.config:
   mlflow-artifacts:
-
+ 

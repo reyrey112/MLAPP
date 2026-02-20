@@ -25,13 +25,14 @@ services:
     volumes:
       - mlapp-user_files:/app/user_files
       - mlapp-.config:/root/.config
+      - /var/run/docker.sock:/var/run/docker.sock 
     depends_on:
       mlapp_db:
         condition: service_healthy
       zenml_server:
         condition: service_healthy
-      # mlflow_service:
-      #   condition: service_healthy
+      mlflow_service:
+        condition: service_healthy
 
   mlapp_db:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django1611:latest
@@ -61,6 +62,8 @@ services:
       - ZENML_DEFAULT_USER_NAME=${ZENML_DEFAULT_USER_NAME}
       - ZENML_DEFAULT_USER_PASSWORD=${ZENML_DEFAULT_USER_PASSWORD}    
       - ZENML_STORE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@zenml_db:3306/${MYSQL_DATABASE}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  
     depends_on:
       zenml_db:
         condition: service_healthy
@@ -104,6 +107,12 @@ services:
       - mlflow-artifacts:/mlartifacts
     command: >
       bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --cors-allowed-origins "https://${SERVER_NAME}" --allowed-hosts "${SERVER_NAME}" --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       mlflow_db:
         condition: service_healthy
