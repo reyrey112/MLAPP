@@ -24,10 +24,10 @@ if [ ! -d "venv_MLAPP" ]; then
     python3.13 -m venv venv_MLAPP
 fi
 source venv_MLAPP/bin/activate
-pip install uv
+venv_MLAPP/bin/pip install uv
 
 sudo apt update && sudo apt install -y --no-install-recommends 'build-essential'
-uv pip install -r requirements.txt
+venv_MLAPP/bin/uv pip install -r requirements.txt
 
 mkdir -p ~/.aws
 if [ ! -f ~/.aws/config ]; then
@@ -35,7 +35,7 @@ if [ ! -f ~/.aws/config ]; then
 region = us-east-2" > ~/.aws/config
 fi
 
-python3.13 download_from_ssm.py
+venv_MLAPP/bin/python download_from_ssm.py
 
 sudo apt update
 sudo apt install nginx
