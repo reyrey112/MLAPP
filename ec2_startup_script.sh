@@ -59,4 +59,4 @@ sudo aws ecr get-login-password --region us-east-2 | sudo docker login --usernam
 
 sudo docker-compose pull
 sudo docker image prune --force
-sudo docker-compose -f docker-compose.yaml up -d
+sudo docker-compose -f docker-compose.yaml up --env-file .env -d
