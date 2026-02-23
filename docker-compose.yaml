@@ -107,7 +107,7 @@ services:
     volumes:
       - mlflow-artifacts:/mlartifacts
     command: >
-      bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --cors-allowed-origins "https://${SERVER_NAME}" --allowed-hosts "${SERVER_NAME}" --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
+      bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --cors-allowed-origins "https://${SERVER_NAME},http://mlflow_server:${MLFLOW_PORT}" --allowed-hosts "${SERVER_NAME},mlflow_server:${MLFLOW_PORT}" --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 10s
