@@ -134,7 +134,7 @@ docker_settings = DockerSettings(
 deployer_settings = DockerDeployerSettings(
     run_args={
         "volumes": {
-            "/app": {
+            "deployer-code": {
                 "bind": "/app",
                 "mode": "rw",
             }

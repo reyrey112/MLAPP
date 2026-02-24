@@ -26,7 +26,8 @@ services:
     volumes:
       - mlapp-user_files:/app/user_files
       - mlapp-.config:/root/.config
-      - /var/run/docker.sock:/var/run/docker.sock 
+      - /var/run/docker.sock:/var/run/docker.sock
+      - deployer-code:/app 
     depends_on:
       mlapp_db:
         condition: service_healthy
@@ -142,4 +143,4 @@ volumes:
   mlapp-user_files:
   mlapp-.config:
   mlflow-artifacts:
-
+  deployer-code:
