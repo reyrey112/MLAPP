@@ -82,7 +82,7 @@ class ProcessingConfig(AppConfig):
                 configuration={},
             )
         except EntityExistsError as e:
-            print("experiment tracker exists, continuing")
+            print("deployer exists, continuing")
 
         try:
             client.create_stack_component(
