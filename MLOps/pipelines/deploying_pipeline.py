@@ -129,17 +129,16 @@ def model_predictions(x_dict: dict):
 
 root_path = Client().active_stack.artifact_store.path
 docker_settings = DockerSettings(
-    apt_packages=["build-essential"], source_files="include", build_context_root="/app"
+    apt_packages=["build-essential"], source_files="include", build_context_root="."
 )
 deployer_settings = DockerDeployerSettings(
     run_args={
-        "volumes": {
-            "deployer-code": {
-                "bind": "/app/MLAPP",
-                "mode": "rw",
-            }
-        },
-        "environment": {"PYTHONPATH": "/app"},
+        # "volumes": {
+        #     "/app": {
+        #         "bind": "/app",
+        #         "mode": "rw",
+        #     }
+        # },
         "network": "mlapp_default",
     }
 )
