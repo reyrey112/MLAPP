@@ -136,7 +136,7 @@ deployer_settings = DockerDeployerSettings(
         "volumes": {
             "/app": {
                 "bind": "/app",
-                "mode": "ro",
+                "mode": "rw",
             }
         },
         "environment": {"PYTHONPATH": "/app"},
