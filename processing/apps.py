@@ -76,8 +76,8 @@ class ProcessingConfig(AppConfig):
 
         try:
             client.create_stack_component(
-                name="local_deployer",
-                flavor="local",
+                name="guest_deployer",
+                flavor="docker",
                 component_type=StackComponentType.DEPLOYER,
                 configuration={},
             )
@@ -111,7 +111,7 @@ class ProcessingConfig(AppConfig):
                     StackComponentType.ARTIFACT_STORE: "guest_artifact_store",
                     StackComponentType.EXPERIMENT_TRACKER: "guest_tracker",
                     StackComponentType.MODEL_REGISTRY: "guest_model_registry",
-                    StackComponentType.DEPLOYER: "local_deployer",
+                    StackComponentType.DEPLOYER: "guest_deployer",
                 },
             )
         except EntityExistsError as e:

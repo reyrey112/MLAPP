@@ -129,7 +129,7 @@ def model_predictions(x_dict: dict):
 
 root_path = Client().active_stack.artifact_store.path
 docker_settings = DockerSettings(
-    apt_packages=["build-essential"], source_files="include", build_context_root="."
+    apt_packages=["build-essential"], source_files="include", build_context_root="/app", environment={"PYTHONPATH": "/app"}
 )
 deployer_settings = DockerDeployerSettings(
     run_args={
