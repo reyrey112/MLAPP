@@ -128,7 +128,7 @@ def model_predictions(x_dict: dict):
 
 
 root_path = Client().active_stack.artifact_store.path
-docker_settings = DockerSettings(apt_packages=["build-essential"])
+docker_settings = DockerSettings(apt_packages=["build-essential"], build_context_root=".")
 deployer_settings = DockerDeployerSettings(run_args={"network": "mlapp_default"})
 
 orc = LocalDockerOrchestratorSettings(run_args={"network": "mlapp_default"})
