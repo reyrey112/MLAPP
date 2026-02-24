@@ -77,7 +77,7 @@ class ProcessingConfig(AppConfig):
         try:
             client.create_stack_component(
                 name="guest_deployer",
-                flavor="docker",
+                flavor="local",
                 component_type=StackComponentType.DEPLOYER,
                 configuration={},
             )
