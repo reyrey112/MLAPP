@@ -86,15 +86,6 @@ class ProcessingConfig(AppConfig):
 
         try:
             client.create_stack_component(
-                name="guest_artifact_store",
-                flavor="s3",
-                component_type=StackComponentType.ARTIFACT_STORE,
-                configuration={"path": f"s3://{s3_bucket}"},
-            )
-        except EntityExistsError as e:
-            print("artifact store exists, continuing")
-        try:
-            client.create_stack_component(
                 name="guest_orc",
                 flavor="local_docker",
                 component_type=StackComponentType.ORCHESTRATOR,
@@ -108,7 +99,6 @@ class ProcessingConfig(AppConfig):
                 name="guest_stack",
                 components={
                     StackComponentType.ORCHESTRATOR: "default",
-                    StackComponentType.ARTIFACT_STORE: "guest_artifact_store",
                     StackComponentType.EXPERIMENT_TRACKER: "guest_tracker",
                     StackComponentType.MODEL_REGISTRY: "guest_model_registry",
                     StackComponentType.DEPLOYER: "guest_deployer",
