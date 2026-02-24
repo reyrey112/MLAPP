@@ -135,7 +135,7 @@ deployer_settings = DockerDeployerSettings(
     run_args={
         "volumes": {
             "deployer-code": {
-                "bind": "/app",
+                "bind": "/app/MLAPP",
                 "mode": "rw",
             }
         },
