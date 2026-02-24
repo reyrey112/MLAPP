@@ -84,6 +84,7 @@ class ProcessingConfig(AppConfig):
         except EntityExistsError as e:
             print("experiment tracker exists, continuing")
 
+
         try:
             client.create_stack_component(
                 name="guest_orc",
@@ -98,7 +99,8 @@ class ProcessingConfig(AppConfig):
             client.create_stack(
                 name="guest_stack",
                 components={
-                    StackComponentType.ORCHESTRATOR: "default",
+                    StackComponentType.ORCHESTRATOR: "guest_orc",
+                    StackComponentType.ARTIFACT_STORE: "default",
                     StackComponentType.EXPERIMENT_TRACKER: "guest_tracker",
                     StackComponentType.MODEL_REGISTRY: "guest_model_registry",
                     StackComponentType.DEPLOYER: "guest_deployer",

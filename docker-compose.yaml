@@ -1,8 +1,9 @@
 services:
 
   django-mlapp:
-
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django-mlapp:prod
+    build: 
+      context: .
+      dockerfile: ./django_dockerfile
     environment:
       - DATABASE_URL=postgresql://${DJANGO_POSTGRES_USER}:${DJANGO_POSTGRES_PASSWORD}@mlapp_db:5432/${DJANGO_POSTGRES_DB}
       - ZENML_STORE_URL=http://zenml_server:${ZENML_PORT}
@@ -12,21 +13,22 @@ services:
       - ZENML_DEFAULT_USER_PASSWORD=${ZENML_DEFAULT_USER_PASSWORD}
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
       - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+      - MLFLOW_TRACKING_URI=http://mlflow_server:${MLFLOW_PORT}
       - MLFLOW_FLASK_SERVER_SECRET_KEY='password'
       - MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME}
       - SECRET_KEY=${SECRET_KEY}
       - MEDIA_URL=${MEDIA_URL}
       - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
-      - SERVER_NAME=${SERVER_NAME}
-      - MLFLOW_PORT=${MLFLOW_PORT}
-      # - MLFLOW_TRACKING_INSECURE_TLS=true
-
+      - MLFLOW_TRACKING_INSECURE_TLS=true
+    # group_add:
+    #   - "1001"
     ports:
       - "${DJANGO_PORT}:8000"
     volumes:
       - mlapp-user_files:/app/user_files
       - mlapp-.config:/root/.config
-      - /var/run/docker.sock:/var/run/docker.sock 
+      - /var/run/docker.sock:/var/run/docker.sock  # this must be here
+
     depends_on:
       mlapp_db:
         condition: service_healthy
@@ -36,7 +38,7 @@ services:
         condition: service_healthy
 
   mlapp_db:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django1611:latest
+    image: postgres:16.11
     ports:
       - ${DJANGO_DB_PORT}:5432
     environment:
@@ -52,19 +54,16 @@ services:
       retries: 5
 
   zenml_server:
-
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/zenml-mlapp:prod
+    build:
+      context: .
+      dockerfile: ./zenml_dockerfile
     ports:
       - ${ZENML_PORT}:8080
     environment:
       - ZENML_SERVER_AUTO_ACTIVATE=1
-      - ZENML_SERVER_HOST=${SERVER_NAME}
-      - ZENML_SERVER_ALLOWED_ORIGINS=https://${SERVER_NAME}
       - ZENML_DEFAULT_USER_NAME=${ZENML_DEFAULT_USER_NAME}
       - ZENML_DEFAULT_USER_PASSWORD=${ZENML_DEFAULT_USER_PASSWORD}    
       - ZENML_STORE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@zenml_db:3306/${MYSQL_DATABASE}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  
     depends_on:
       zenml_db:
         condition: service_healthy
@@ -74,11 +73,12 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    restart: unless-stopped
 
     
 
   zenml_db:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mysql80:latest
+    image: mysql:8.0
     ports:
       - ${ZENML_DB_PORT}:3306
     environment:
@@ -96,18 +96,18 @@ services:
       start_period: 10s
 
   mlflow_server:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mlflow-mlapp:latest
+    image: ghcr.io/mlflow/mlflow:v3.8.0
     ports: 
       - ${MLFLOW_PORT}:5000
     environment:
       - MLFLOW_FLASK_SERVER_SECRET_KEY='password'
-      # - MLFLOW_HOST=${SERVER_NAME}
-      # - MLFLOW_TRACKING_ALLOWED_HOSTS=${SERVER_NAME}
-      # - MLFLOW_TRACKING_INSECURE_TLS=true
+      - MLFLOW_TRACKING_INSECURE_TLS=true
+      - MLFLOW_SERVER_DISABLE_SECURITY_MIDDLEWARE=true
+
     volumes:
       - mlflow-artifacts:/mlartifacts
     command: >
-      bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --cors-allowed-origins "https://${SERVER_NAME},http://mlflow_server:${MLFLOW_PORT}" --allowed-hosts "${SERVER_NAME},mlflow_server:${MLFLOW_PORT}" --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
+      bash -c "pip install mlflow[auth] psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri=postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow_db:5432/${MLFLOW_POSTGRES_DB} --app-name basic-auth"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 10s
@@ -120,7 +120,7 @@ services:
     # restart: unless-stopped
 
   mlflow_db:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/django1611:latest
+    image: postgres:16.11
     ports:
       - ${MLFLOW_DB_PORT}:5432
     environment:
@@ -134,6 +134,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  
 
 volumes:
   mlflow-postgres-data:
@@ -142,4 +143,4 @@ volumes:
   mlapp-user_files:
   mlapp-.config:
   mlflow-artifacts:
-
+ 

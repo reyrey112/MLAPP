@@ -15,17 +15,20 @@ import mlflow
 from MLapp.settings import MEDIA_ROOT
 
 
-docker_settings = DockerSettings(
-    apt_packages=["build-essential"]
-)
+docker_settings = DockerSettings(apt_packages=["build-essential"])
 orc = LocalDockerOrchestratorSettings(
     run_args={
-        "volumes": {
-            f"{MEDIA_ROOT}/csvs": {
-                "bind":  f"{MEDIA_ROOT}/csvs",
-                "mode": "rw",
-            }
-        }
+        "network": "mlapp_default",
+        # "volumes": {
+        #     "mlapp_mlapp-.config": {
+        #         "bind": f"/root/.config",
+        #         "mode": "rw",
+        #     },
+        #     # f"{MEDIA_ROOT}/csvs": {
+        #     #     "bind": f"{MEDIA_ROOT}/csvs",
+        #     #     "mode": "rw",
+        #     # },
+        # },
     }
 )
 
@@ -53,5 +56,3 @@ def train_pipeline(zenml_help: pydantic_model):
     # )
     model = log_model(zenml_help.zenml_data.model_path, zenml_help.zenml_data.run_name)
     # r2_score, rmse = evaluate_model(model, x_test, y_test)
-
-

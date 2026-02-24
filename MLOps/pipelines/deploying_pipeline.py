@@ -134,12 +134,6 @@ deployer_settings = DockerDeployerSettings(run_args={"network": "mlapp_default"}
 orc = LocalDockerOrchestratorSettings(
     run_args={
         "network": "mlapp_default",
-        # "volumes": {
-        #     f"/home/ubuntu/MLAPP": {
-        #         "bind": f"/app",
-        #         "mode": "rw",
-        #     }
-        # },
     }
 )
 
