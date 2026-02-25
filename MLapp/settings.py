@@ -86,10 +86,10 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-# CSRF_TRUSTED_ORIGINS = [f"https://{os.environ.get("SERVER_NAME")}"]
-# USE_X_FORWARDED_HOST = True
-# SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+ALLOWED_HOSTS = [f"{os.environ.get("SERVER_NAME")}", "localhost", f"{os.environ.get("AWS_ELASTIC_IP")}"]
+CSRF_TRUSTED_ORIGINS = [f"https://{os.environ.get("SERVER_NAME")}"]
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 

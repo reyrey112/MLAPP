@@ -19,8 +19,10 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - MEDIA_URL=${MEDIA_URL}
       - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
-      - MLFLOW_TRACKING_INSECURE_TLS=true
+      - SERVER_NAME=${SERVER_NAME}
+      - MLFLOW_PORT=${MLFLOW_PORT}
       - ZENML_SOURCE_ROOT=/app
+      # - MLFLOW_TRACKING_INSECURE_TLS=true
 
     # group_add:
     #   - "1001"
