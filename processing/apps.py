@@ -7,7 +7,6 @@ import os
 load_dotenv()
 
 
-
 class ProcessingConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "processing"
@@ -42,7 +41,7 @@ class ProcessingConfig(AppConfig):
         #         raise KeyError
         # except KeyError as e: #Add try except statment for all of the compoenentns
         print("no stack found, creating new guest stack")
-        
+
         mlflow_port = os.environ.get("MLFLOW_PORT")
         print(f"{mlflow_port}")
         s3_bucket = os.environ.get("AWS_STORAGE_BUCKET_NAME")
@@ -57,7 +56,7 @@ class ProcessingConfig(AppConfig):
                     "tracking_uri": f"http://mlflow_server:{mlflow_port}",
                     "tracking_username": f"{os.environ.get("MLFLOW_TRACKING_USERNAME")}",
                     "tracking_password": f"{os.environ.get("MLFLOW_TRACKING_PASSWORD")}",
-                    "experiment_name": "Default"
+                    "experiment_name": "Default",
                 },
             )
 
@@ -93,12 +92,27 @@ class ProcessingConfig(AppConfig):
             )
         except EntityExistsError as e:
             print("artifact store exists, continuing")
+
+        # try:
+        #     client.create_stack_component(
+        #         name="guest_container_registry",
+        #         flavor="aws",
+        #         component_type=StackComponentType.CONTAINER_REGISTRY,
+        #         configuration={
+        #             "uri": f"{os.environ.get("AWS_ACCOUNT_ID")}.dkr.ecr.{os.environ.get("AWS_REGION")}.amazonaws.com",
+        #             "default_repository": "containers"
+        #         },
+        #     )
+
+        # except EntityExistsError as e:
+        #     print("container registry already exists, continuing")
+
         try:
             client.create_stack_component(
                 name="guest_orc",
                 flavor="local_docker",
                 component_type=StackComponentType.ORCHESTRATOR,
-                configuration={}
+                configuration={},
             )
         except EntityExistsError as e:
             print("orc already exists, continuing")
@@ -112,6 +126,7 @@ class ProcessingConfig(AppConfig):
                     StackComponentType.EXPERIMENT_TRACKER: "guest_tracker",
                     StackComponentType.MODEL_REGISTRY: "guest_model_registry",
                     StackComponentType.DEPLOYER: "guest_deployer",
+                    # StackComponentType.CONTAINER_REGISTRY: "guest_container_registry"
                 },
             )
         except EntityExistsError as e:
