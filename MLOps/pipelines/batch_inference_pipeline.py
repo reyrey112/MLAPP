@@ -94,7 +94,7 @@ def write_to_database(db_name, user, password, host, port, data, table_name):
     )
 
 
-@pipeline(enable_cache=False, settings={"docker": docker_settings, "orchestrator": orc})
+@pipeline(enable_cache=True, settings={"docker": docker_settings, "orchestrator": orc})
 def batch_formulation_pipeline(zenml_help: pydantic_model, file_path: str):
     logging.warning(file_path)
     data = load_data(file_path)

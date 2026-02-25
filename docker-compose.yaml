@@ -20,6 +20,8 @@ services:
       - MEDIA_URL=${MEDIA_URL}
       - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
       - MLFLOW_TRACKING_INSECURE_TLS=true
+      - ZENML_SOURCE_ROOT=/app
+
     # group_add:
     #   - "1001"
     ports:

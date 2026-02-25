@@ -1,13 +1,13 @@
 from zenml import pipeline
-from MLOps.steps.zen_ingest_data import ingest_df
-from MLOps.steps.zen_clean_data import clean_df
-from MLOps.steps.zen_model_train import zen_train_model
-from MLOps.steps.zen_evaluate_model import evaluate_model
+# from MLOps.steps.zen_ingest_data import ingest_df
+# from MLOps.steps.zen_clean_data import clean_df
+# from MLOps.steps.zen_model_train import zen_train_model
+# from MLOps.steps.zen_evaluate_model import evaluate_model
 from MLOps.steps.zen_log_model import log_model
 from zenml_helper import zenml_parse, pydantic_model
-from MLOps.steps.zen_config import ModelNameConfig
+# from MLOps.steps.zen_config import ModelNameConfig
 from zenml.config import DockerSettings
-from zenml.config.docker_settings import DockerBuildConfig
+# from zenml.config.docker_settings import DockerBuildConfig
 from zenml.orchestrators.local_docker.local_docker_orchestrator import (
     LocalDockerOrchestratorSettings,
 )
@@ -15,25 +15,29 @@ import mlflow
 from MLapp.settings import MEDIA_ROOT
 
 
-docker_settings = DockerSettings(apt_packages=["build-essential"])
-orc = LocalDockerOrchestratorSettings(
-    run_args={
-        "network": "mlapp_default",
-        # "volumes": {
-        #     "mlapp_mlapp-.config": {
-        #         "bind": f"/root/.config",
-        #         "mode": "rw",
-        #     },
-        #     # f"{MEDIA_ROOT}/csvs": {
-        #     #     "bind": f"{MEDIA_ROOT}/csvs",
-        #     #     "mode": "rw",
-        #     # },
-        # },
-    }
+docker_settings = DockerSettings(
+    apt_packages=["build-essential"],
+    build_context_root="/app",
+    build_config={"root_directory": "/app"},
 )
+# orc = LocalDockerOrchestratorSettings(
+#     run_args={
+#         "network": "mlapp_default",
+#         # "volumes": {
+#         #     "mlapp_mlapp-.config": {
+#         #         "bind": f"/root/.config",
+#         #         "mode": "rw",
+#         #     },
+#         #     # f"{MEDIA_ROOT}/csvs": {
+#         #     #     "bind": f"{MEDIA_ROOT}/csvs",
+#         #     #     "mode": "rw",
+#         #     # },
+#         # },
+#     }
+# )
 
 
-@pipeline(enable_cache=False, settings={"docker": docker_settings, "orchestrator": orc})
+@pipeline(enable_cache=True, settings={"docker": docker_settings})
 def train_pipeline(zenml_help: pydantic_model):
     """
     Docstring for train_pipeline

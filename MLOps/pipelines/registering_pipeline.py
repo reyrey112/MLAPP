@@ -41,10 +41,13 @@ def get_model(
 # def register_step(uri: str, name: str) -> str:
 #     mlflow_client = mlflow.MlflowClient()
 #     model_version = mlflow.register_model()
-docker_settings = DockerSettings(apt_packages=["build-essential"])
+docker_settings = DockerSettings(
+    apt_packages=["build-essential"],
+    build_context_root="/app",
+    build_config={"root_directory": "/app"},
+)
 
-
-@pipeline(enable_cache=False, settings={"docker": docker_settings})
+@pipeline(enable_cache=True, settings={"docker": docker_settings})
 def register_pipeline(zenml_help: pydantic_model):
 
     model, uri = get_model(run_name=zenml_help.zenml_data.run_name)

@@ -50,12 +50,30 @@ else:
 
 
 
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
 
 
-    # STATIC_ROOT = BASE_DIR / "static"
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_REGION_NAME = "us-east-2"
 
 
+# STATIC_ROOT = BASE_DIR / "static"
+
+STORAGES = {
+    # Media
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        "OPTIONS": {"location": "media"},
+    },
+    # CSS and JS
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        "OPTIONS": {"location": "static"},
+    },
+}
 
 # COMMENT FOR CLOUD
 STATICFILES_DIRS = []
@@ -68,10 +86,10 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [f"{os.environ.get("SERVER_NAME")}", "localhost"]
-CSRF_TRUSTED_ORIGINS = [f"https://{os.environ.get("SERVER_NAME")}"]
-USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+ALLOWED_HOSTS = ["*"]
+# CSRF_TRUSTED_ORIGINS = [f"https://{os.environ.get("SERVER_NAME")}"]
+# USE_X_FORWARDED_HOST = True
+# SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 

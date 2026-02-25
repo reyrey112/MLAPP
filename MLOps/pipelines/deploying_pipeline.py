@@ -22,84 +22,8 @@ import logging
 from zenml.enums import StackComponentType
 
 
-# @step
-def get_model(
-    model_name: str,
-) -> Tuple[Annotated[RegisteredModel, "model"], Annotated[str, "version"]]:
-    client = Client()
-    model_registry: MLFlowModelRegistry
-    model_registry = client.active_stack.model_registry
-    model = model_registry.get_model(model_name)
-    version = model_registry.get_latest_model_version(model_name).version
-    return model, version
-
-
-# @step
-def get_run_name(model_name: str):
-    logging.warning("start get run name")
-
-    mlflow_client = MlflowClient()
-    client = Client()
-    model_registry: MLFlowModelRegistry
-    logging.warning("getting active model registry")
-
-    model_registry = client.active_stack.model_registry
-
-    logging.warning(f"{model_registry.list_models()}")
-
-    logging.warning("getting latest model version")
-
-    version = model_registry.get_latest_model_version(model_name).version
-    logging.warning("getting registered model")
-
-    registered_model = mlflow_client.get_model_version(model_name, version)
-    run_name = registered_model.tags["zenml_run_name"]
-    logging.warning("end get run name")
-
-    return run_name
-
-
-# @step
-def get_prediction_model(run_name: str):
-    logging.warning("start get prediction model")
-
-    client = Client()
-
-    pipeline = client.get_pipeline("train_pipeline")
-    run = pipeline.get_runs(name=run_name)[0]
-    train_step = run.steps["zen_train_model"]
-    model_artifact = train_step.outputs["output"][0]
-
-    model = model_artifact.load()
-    logging.warning("end get prediction model")
-    return model
-
-
 docker_settings = DockerSettings(required_integrations=[MLFLOW])
 import os
-
-
-@pipeline(
-    enable_cache=False,
-    settings={"docker": docker_settings},
-)
-def deploy_pipeline(
-    zenml_help: pydantic_model,
-    min_accuracy: float = 0,
-    workers: int = 1,
-    timeout: int = DEFAULT_SERVICE_START_STOP_TIMEOUT,
-):
-
-    model, version = get_model(zenml_help.zenml_data.registered_model_name)
-    # run_name = get_run_name(zenml_help.zenml_data.registered_model_name)
-    get_prediction_model(zenml_help.zenml_data.run_name)
-    mlflow_model_deployer_step(
-        model=model,
-        experiment_name="train_pipeline",
-        run_name=zenml_help.zenml_data.run_name,
-        workers=workers,
-        timeout=timeout,
-    )
 
 
 def init_model(registered_model_name: str = "None", run_name: str = "None"):
@@ -110,6 +34,21 @@ def init_model(registered_model_name: str = "None", run_name: str = "None"):
     logging.warning("complete init model")
 
     return loaded_model
+
+
+def get_prediction_model(run_name: str):
+    logging.warning("start get prediction model")
+
+    client = Client()
+
+    pipeline = client.get_pipeline("train_pipeline")
+    run = pipeline.get_runs(name=run_name)[0]
+    train_step = run.steps["log_model"]
+    model_artifact = train_step.outputs["output"][0]
+
+    model = model_artifact.load()
+    logging.warning("end get prediction model")
+    return model
 
 
 @step
@@ -128,23 +67,27 @@ def model_predictions(x_dict: dict):
 
 
 root_path = Client().active_stack.artifact_store.path
-docker_settings = DockerSettings(apt_packages=["build-essential"])
+docker_settings = DockerSettings(
+    apt_packages=["build-essential"],
+    environment={
+        "AWS_ACCESS_KEY_ID": f"{os.environ.get("AWS_ACCESS_KEY_ID")}",
+        "AWS_SECRET_ACCESS_KEY": f"{os.environ.get("AWS_SECRET_ACCESS_KEY")}",
+    },
+    build_context_root="/app",
+    build_config={"root_directory": "/app"},
+)
 deployer_settings = DockerDeployerSettings(run_args={"network": "mlapp_default"})
 
-orc = LocalDockerOrchestratorSettings(
-    run_args={
-        "network": "mlapp_default",
-    }
-)
+
 
 
 @pipeline(
-    enable_cache=False,
+    enable_cache=True,
     on_init=init_model,
     settings={
         "deployer": deployer_settings,
         "docker": docker_settings,
-        "orchestrator": orc,
+        # "orchestrator": orc,
     },
 )
 def formulation_pipeline(
@@ -176,3 +119,65 @@ def formulation_pipeline(
         "Crashout": Crashout,
     }
     return model_predictions(x_dict)
+
+# orc = LocalDockerOrchestratorSettings(
+#     run_args={
+#         "network": "mlapp_default",
+#     }
+# )
+
+# def get_model(
+#     model_name: str,
+# ) -> Tuple[Annotated[RegisteredModel, "model"], Annotated[str, "version"]]:
+#     client = Client()
+#     model_registry: MLFlowModelRegistry
+#     model_registry = client.active_stack.model_registry
+#     model = model_registry.get_model(model_name)
+#     version = model_registry.get_latest_model_version(model_name).version
+#     return model, version
+
+
+# def get_run_name(model_name: str):
+#     logging.warning("start get run name")
+
+#     mlflow_client = MlflowClient()
+#     client = Client()
+#     model_registry: MLFlowModelRegistry
+#     logging.warning("getting active model registry")
+
+#     model_registry = client.active_stack.model_registry
+
+#     logging.warning(f"{model_registry.list_models()}")
+
+#     logging.warning("getting latest model version")
+
+#     version = model_registry.get_latest_model_version(model_name).version
+#     logging.warning("getting registered model")
+
+#     registered_model = mlflow_client.get_model_version(model_name, version)
+#     run_name = registered_model.tags["zenml_run_name"]
+#     logging.warning("end get run name")
+
+#     return run_name
+
+# @pipeline(
+#     enable_cache=False,
+#     settings={"docker": docker_settings},
+# )
+# def deploy_pipeline(
+#     zenml_help: pydantic_model,
+#     min_accuracy: float = 0,
+#     workers: int = 1,
+#     timeout: int = DEFAULT_SERVICE_START_STOP_TIMEOUT,
+# ):
+
+#     model, version = get_model(zenml_help.zenml_data.registered_model_name)
+#     # run_name = get_run_name(zenml_help.zenml_data.registered_model_name)
+#     get_prediction_model(zenml_help.zenml_data.run_name)
+#     mlflow_model_deployer_step(
+#         model=model,
+#         experiment_name="train_pipeline",
+#         run_name=zenml_help.zenml_data.run_name,
+#         workers=workers,
+#         timeout=timeout,
+#     )
